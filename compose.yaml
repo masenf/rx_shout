@@ -1,0 +1,54 @@
+# During build and run, set environment DOMAIN pointing
+# to publicly accessible domain where app will be hosted
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: secret
+    volumes:
+       - db-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis
+
+  app:
+    image: local/reflex-app
+    build:
+      context: .
+      args:
+        API_URL: https://${DOMAIN:-localhost}
+    environment:
+      DB_URL: postgresql+psycopg2://postgres:secret@db/postgres
+      REDIS_URL: redis:6379
+    depends_on:
+      - db
+      - redis
+
+  webserver:
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - 443:443
+      - 80:80  # for acme-challenge via HTTP
+    build:
+      context: .
+      dockerfile: Caddy.Dockerfile
+    depends_on:
+      - app
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  redisui:
+    image: patrikx3/p3x-redis-ui:latest
+    ports:
+      - 8081:7843
+    volumes:
+      - redis-ui-settings:/settings
+
+volumes:
+  db-data:
+  redis-ui-settings:
