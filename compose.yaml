@@ -15,8 +15,6 @@ services:
     image: local/reflex-app
     build:
       context: .
-      args:
-        API_URL: https://${DOMAIN:-localhost}
     environment:
       DB_URL: postgresql+psycopg2://postgres:secret@db/postgres
       REDIS_URL: redis://redis:6379
