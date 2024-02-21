@@ -19,7 +19,7 @@ services:
         API_URL: https://${DOMAIN:-localhost}
     environment:
       DB_URL: postgresql+psycopg2://postgres:secret@db/postgres
-      REDIS_URL: redis:6379
+      REDIS_URL: redis://redis:6379
     depends_on:
       - db
       - redis

@@ -1,3 +1,2 @@
-#reflex
-git+https://github.com/reflex-dev/reflex.git@masenf/db-connect-args
+reflex==0.4.1
 psycopg2
