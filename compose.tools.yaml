@@ -4,13 +4,11 @@
 services:
   adminer:
     image: adminer
-    restart: always
     ports:
       - 8080:8080
 
   redis-commander:
     image: ghcr.io/joeferner/redis-commander:latest
-    restart: always
     environment:
     - REDIS_HOSTS=local:redis:6379
     ports:

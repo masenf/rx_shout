@@ -12,8 +12,10 @@ services:
       DB_URL: sqlite:///data/reflex.db
     build:
       context: .
+      dockerfile: prod.Dockerfile
     volumes:
        - db-data:/app/data
+    restart: always
 
   webserver:
     environment:
@@ -26,6 +28,7 @@ services:
       dockerfile: Caddy.Dockerfile
     volumes:
        - caddy-data:/root/.caddy
+    restart: always
     depends_on:
       - app
 

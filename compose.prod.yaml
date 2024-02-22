@@ -3,6 +3,7 @@
 services:
   db:
     image: postgres
+    restart: always
     environment:
       POSTGRES_PASSWORD: secret
     volumes:
@@ -10,6 +11,7 @@ services:
 
   redis:
     image: redis
+    restart: always
 
   app:
     environment:
