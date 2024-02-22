@@ -15,6 +15,7 @@ services:
       dockerfile: prod.Dockerfile
     volumes:
        - db-data:/app/data
+       - upload-data:/app/uploaded_files
     restart: always
 
   webserver:
@@ -35,5 +36,7 @@ services:
 volumes:
   # SQLite data
   db-data:
+  # Uploaded files
+  upload-data:
   # TLS keys and certificates
   caddy-data:

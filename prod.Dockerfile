@@ -13,7 +13,7 @@ RUN /install.sh && rm /install.sh
 # Copy local context to `/app` inside container (see .dockerignore)
 WORKDIR /app
 COPY . .
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data /app/uploaded_files
 
 # Create virtualenv which will be copied into final container
 ENV VIRTUAL_ENV=/app/.venv
