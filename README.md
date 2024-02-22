@@ -1,4 +1,6 @@
-# repro-datetime-model
+# rx_shout
+
+A shoutbox-like app for anonymous posting of images and text.
 
 This is an example app that is designed to run in "production mode"
 with postgres and redis via docker compose.
