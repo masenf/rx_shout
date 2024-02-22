@@ -1,52 +1,36 @@
+# Base compose file production deployment of reflex app with Caddy webserver
+# providing TLS termination and reverse proxying.
+#
+# See `compose.prod.yaml` for more robust and performant deployment option.
+#
 # During build and run, set environment DOMAIN pointing
 # to publicly accessible domain where app will be hosted
 services:
-  db:
-    image: postgres
-    environment:
-      POSTGRES_PASSWORD: secret
-    volumes:
-       - db-data:/var/lib/postgresql/data
-
-  redis:
-    image: redis
-
   app:
     image: local/reflex-app
+    environment:
+      DB_URL: sqlite:///data/reflex.db
     build:
       context: .
-    environment:
-      DB_URL: postgresql+psycopg2://postgres:secret@db/postgres
-      REDIS_URL: redis://redis:6379
-    depends_on:
-      - db
-      - redis
+    volumes:
+       - db-data:/app/data
 
   webserver:
     environment:
       DOMAIN: ${DOMAIN:-localhost}
     ports:
       - 443:443
-      - 80:80  # for acme-challenge via HTTP
+      - 80:80  # For acme-challenge via HTTP.
     build:
       context: .
       dockerfile: Caddy.Dockerfile
+    volumes:
+       - caddy-data:/root/.caddy
     depends_on:
       - app
 
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
-
-  redisui:
-    image: patrikx3/p3x-redis-ui:latest
-    ports:
-      - 8081:7843
-    volumes:
-      - redis-ui-settings:/settings
-
 volumes:
+  # SQLite data
   db-data:
-  redis-ui-settings:
+  # TLS keys and certificates
+  caddy-data:

@@ -1,2 +1,7 @@
 .web
 .git
+__pycache__/*
+Dockerfile
+Caddy.Dockerfile
+compose.yaml
+compost.*.yaml
