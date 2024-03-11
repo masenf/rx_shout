@@ -16,43 +16,6 @@ def is_uploading_view() -> rx.Component:
     )
 
 
-def pre_uploading_view(auto_upload_delay_ms: int = 500) -> rx.Component:
-    """Rendered when files are selected, but the upload has not started.
-    
-    Contains a timer to automatically start the upload after some delay.
-    """
-    upload_handler_spec = UploadState.handle_upload(
-        rx.upload_files(
-            upload_id=UPLOAD_ID,
-            on_upload_progress=UploadState.on_upload_progress,
-        ),
-    )
-
-    return rx.hstack(
-        rx.foreach(
-            rx.selected_files(UPLOAD_ID),
-            rx.text,
-        ),
-        rx.spacer(),
-        rx.button(
-            "Upload",
-            type="button",
-            on_click=upload_handler_spec,
-        ),
-        # Auto-upload after half second.
-        rx.moment(
-            interval=rx.cond(
-                rx.selected_files(UPLOAD_ID) & ~UploadState.is_uploading,
-                auto_upload_delay_ms,
-                0,
-            ),
-            on_change=lambda _: upload_handler_spec,
-            display="none",
-        ),
-        width="100%",
-    )
-
-
 def upload_form() -> rx.Component:
     """The dropzone and button for selecting an image to upload."""
     return rx.upload(
@@ -76,6 +39,12 @@ def upload_form() -> rx.Component:
         border="1px dotted var(--gray-10)",
         padding="10px",
         width="100%",
+        on_drop=UploadState.handle_upload(
+            rx.upload_files(
+                upload_id=UPLOAD_ID,
+                on_upload_progress=UploadState.on_upload_progress,
+            ),
+        ),
     )
 
 
@@ -110,10 +79,9 @@ def image_upload_component() -> rx.Component:
     """A component for selecting an image, uploading it, and displaying a preview."""
     return rx.cond(
         rx.selected_files(UPLOAD_ID),
-        rx.cond(  # Files are selected.
+        rx.cond(
             UploadState.is_uploading,
             is_uploading_view(),
-            pre_uploading_view(),
         ),
         rx.cond(
             UploadState.image_relative_path,
