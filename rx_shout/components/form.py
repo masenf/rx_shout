@@ -2,7 +2,7 @@
 
 import reflex as rx
 
-from ..state import State
+from ..state import State, UserInfoState
 from .image_upload import image_upload_component
 
 
@@ -34,9 +34,29 @@ def submission_form() -> rx.Component:
                 size="4",
             ),
             form_error_callout(),
-            rx.input.root(
-                rx.input.slot(rx.icon("user", size=20)),
-                rx.input(placeholder="Who are you?", id="author"),
+            rx.hstack(
+                rx.input.root(
+                    rx.input.slot(rx.icon("user", size=20)),
+                    rx.input(
+                        value=UserInfoState.user_info.name,
+                        read_only=True,
+                    ),
+                    width="100%",
+                ),
+                rx.input.root(
+                    rx.input.slot(rx.icon("at_sign", size=20)),
+                    rx.input(
+                        value=UserInfoState.user_info.email,
+                        read_only=True,
+                    ),
+                    width="100%",
+                ),
+                rx.icon_button(
+                    rx.icon("log-out", size=20),
+                    on_click=State.logout_and_reset,
+                    color_scheme="gray",
+                    type="button",
+                ),
                 width="100%",
             ),
             rx.input.root(
@@ -46,10 +66,16 @@ def submission_form() -> rx.Component:
             ),
             image_upload_component(),
             rx.hstack(
-                rx.button("Reload", rx.icon("refresh-cw", size=20), on_click=State.load_entries, type="button", color_scheme="gray"),
+                rx.button(
+                    "Reload",
+                    rx.icon("refresh-cw", size=20),
+                    on_click=State.load_entries,
+                    type="button",
+                    color_scheme="gray",
+                ),
                 rx.spacer(),
                 rx.button("Post", rx.icon("send", size=20)),
-                width="100%"
+                width="100%",
             ),
             gap="1em",
         ),

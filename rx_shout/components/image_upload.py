@@ -12,7 +12,9 @@ def is_uploading_view() -> rx.Component:
     """Rendered while upload is in progress."""
     return rx.hstack(
         rx.progress(value=UploadState.upload_progress),
-        rx.button("Cancel", on_click=UploadState.cancel_upload(UPLOAD_ID), type="button"),
+        rx.button(
+            "Cancel", on_click=UploadState.cancel_upload(UPLOAD_ID), type="button"
+        ),
     )
 
 
@@ -87,5 +89,5 @@ def image_upload_component() -> rx.Component:
             UploadState.image_relative_path,
             uploaded_image_view(),  # Upload complete
             upload_form(),
-        )
+        ),
     )
