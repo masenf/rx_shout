@@ -2,3 +2,5 @@
 *.py[cod]
 .web
 __pycache__/
+.env
+uploaded_files
