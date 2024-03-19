@@ -1,12 +1,12 @@
 """This is an shoutbox-like app for posting text and images."""
 
 import reflex as rx
+import reflex_google_auth
 
 from .components.entry import entry_view
 from .components.google_auth import (
     auth_error_callout,
     google_auth_button,
-    GoogleAuthState,
 )
 from .components.form import submission_form
 from .state import State
@@ -24,7 +24,7 @@ def index() -> rx.Component:
             rx.vstack(
                 rx.card(
                     rx.cond(
-                        GoogleAuthState.token_is_valid & State.user_info.enabled,
+                        reflex_google_auth.GoogleAuthState.token_is_valid & State.user_info.enabled,
                         submission_form(),
                         rx.flex(
                             auth_error_callout(),

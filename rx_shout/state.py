@@ -1,20 +1,18 @@
 """All state management for the app is defined in this module."""
 
-from pathlib import Path
-import uuid
-
 import reflex as rx
+import reflex_google_auth
 import sqlalchemy
 from sqlmodel import delete, Session
 
-from .google_auth_state import GoogleAuthState
 from .models import Entry, EntryFlags, UserInfo
+
 
 # The ID the will be used by the upload component.
 UPLOAD_ID = "upload_image"
 
 
-class UserInfoState(GoogleAuthState):
+class UserInfoState(reflex_google_auth.GoogleAuthState):
     auth_error: str = ""
 
     @rx.cached_var
@@ -32,12 +30,9 @@ class UserInfoState(GoogleAuthState):
                     email=self.tokeninfo["email"],
                     picture=self.tokeninfo["picture"],
                 )
-                print(f"Created new user: {user}")
                 session.add(user)
                 session.commit()
                 session.refresh(user)
-            else:
-                print(f"Got existing user: {user}")
             return user
 
     async def set_enabled(self, user_id: int, enable: bool = False):
@@ -50,7 +45,7 @@ class UserInfoState(GoogleAuthState):
                 user.enabled = enable
             session.add(user)
             session.commit()
-        self.load_entries()
+        return State.load_entries
 
     @rx.cached_var
     def is_admin(self) -> bool:
@@ -78,7 +73,6 @@ class State(UserInfoState):
     image_relative_path: str
 
     def reload_after_login(self, data):
-        print("reload after login")
         self.reset()
         self.load_entries()
         self._is_valid_user()
@@ -114,7 +108,7 @@ class State(UserInfoState):
         with rx.session() as session:
             self.entries = session.exec(
                 Entry.select()
-                .where(Entry.hidden is False)
+                .where(Entry.hidden == False)
                 .options(
                     sqlalchemy.orm.selectinload(Entry.user_info),
                 )
@@ -201,43 +195,3 @@ class State(UserInfoState):
             )
             session.commit()
         self.load_entries()
-
-
-class UploadState(State):
-    """State for handling file uploads."""
-
-    upload_progress: int
-    is_uploading: bool = False
-
-    async def handle_upload(self, files: list[rx.UploadFile]):
-        """Write the file bytes to disk and update the filename in base state."""
-        if not self._is_valid_user():
-            return
-        yield rx.clear_selected_files(UPLOAD_ID)
-        for file in files:
-            upload_data = await file.read()
-            filename = f"{uuid.uuid4()}_{file.filename.lstrip('/')}"
-            outfile = Path(rx.get_upload_dir()) / filename
-            outfile.parent.mkdir(parents=True, exist_ok=True)
-            outfile.write_bytes(upload_data)
-            self.image_relative_path = filename
-            break  # only allow one upload
-
-    def on_upload_progress(self, prog: dict):
-        """Handle interim progress updates while waiting for upload."""
-        if prog["progress"] < 1:
-            self.is_uploading = True
-        else:
-            self.is_uploading = False
-        self.upload_progress = round(prog["progress"] * 100)
-
-    def cancel_upload(self, upload_id: str):
-        """Cancel the upload before it is complete."""
-        self.is_uploading = False
-        return rx.cancel_upload(upload_id)
-
-    def delete_uploaded_image(self):
-        """If the user wants to delete the image before making a post."""
-        if self.image_relative_path:
-            (Path(rx.get_upload_dir()) / self.image_relative_path).unlink()
-            self.image_relative_path = ""
