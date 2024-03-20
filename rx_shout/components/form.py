@@ -38,7 +38,7 @@ def submission_form() -> rx.Component:
                 rx.input.root(
                     rx.input.slot(rx.icon("user", size=20)),
                     rx.input(
-                        value=UserInfoState.user_info.name,
+                        value=UserInfoState.user_info.author.name,
                         read_only=True,
                     ),
                     width="100%",

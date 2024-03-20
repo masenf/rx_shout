@@ -1,20 +1,20 @@
 """Frontend components for displaying entries."""
 import reflex as rx
 
-from ..models import Entry, UserInfo
+from ..models import Author, Entry
 from ..state import State
 
 
-def ban_button(user: UserInfo) -> rx.Component:
+def ban_button(author: Author) -> rx.Component:
     """The button to ban a user."""
     return rx.cond(
         State.is_admin,
         rx.cond(
-            user.enabled,
+            author.user_info.enabled,
             rx.tooltip(
                 rx.icon_button(
                     rx.icon("user"),
-                    on_click=State.set_enabled(user.id, False),
+                    on_click=State.set_enabled(author.user_id, False),
                     color_scheme="green",
                     size="1",
                 ),
@@ -23,7 +23,7 @@ def ban_button(user: UserInfo) -> rx.Component:
             rx.tooltip(
                 rx.icon_button(
                     rx.icon("user_x"),
-                    on_click=State.set_enabled(user.id, True),
+                    on_click=State.set_enabled(author.user_id, True),
                     color_scheme="red",
                     size="1",
                 ),
@@ -37,16 +37,13 @@ def entry_metadata(e: Entry) -> rx.Component:
     """Rendered above the entry text and next to the icon."""
     return rx.hstack(
         rx.avatar(
-            src=e.user_info.picture,
+            src=e.author.picture,
             size="1",
-            alt=e.user_info.name,
+            alt=e.author.name,
             margin_right="0.5em",
         ),
-        rx.text.strong(
-            e.user_info.name,
-            text_decoration=rx.cond(e.user_info.enabled, "none", "line-through"),
-        ),
-        ban_button(e.user_info),
+        rx.text.strong(e.author.name),
+        ban_button(e.author),
         rx.spacer(),
         rx.text(e.ts, font_size="0.75em"),
         width="100%",

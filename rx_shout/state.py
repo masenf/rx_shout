@@ -5,7 +5,7 @@ import reflex_google_auth
 import sqlalchemy
 from sqlmodel import delete, Session
 
-from .models import Entry, EntryFlags, UserInfo
+from .models import Author, Entry, EntryFlags, UserInfo
 
 
 # The ID the will be used by the upload component.
@@ -21,16 +21,18 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
             return UserInfo(id=-1)
         with rx.session() as session:
             user = session.exec(
-                UserInfo.select().where(UserInfo.ext_id == self.tokeninfo["sub"])
+                UserInfo.select().where(UserInfo.ext_id == self.tokeninfo["sub"]).options(sqlalchemy.orm.selectinload(UserInfo.author))
             ).first()
             if not user:
                 user = UserInfo(
                     ext_id=self.tokeninfo["sub"],
-                    name=self.tokeninfo["name"],
                     email=self.tokeninfo["email"],
-                    picture=self.tokeninfo["picture"],
                 )
                 session.add(user)
+                session.commit()
+                session.refresh(user)
+                author = Author(user_id=user.id, name=self.tokeninfo["name"], picture=self.tokeninfo["picture"])
+                session.add(author)
                 session.commit()
                 session.refresh(user)
             return user
@@ -105,13 +107,19 @@ class State(UserInfoState):
 
     def load_entries(self):
         """Load entries from the database."""
+        if self.is_admin:
+            load_options = [
+                sqlalchemy.orm.selectinload(Entry.author).options(sqlalchemy.orm.selectinload(Author.user_info)),
+            ]
+        else:
+            load_options = [
+                sqlalchemy.orm.selectinload(Entry.author),
+            ]
         with rx.session() as session:
             self.entries = session.exec(
                 Entry.select()
                 .where(Entry.hidden == False)
-                .options(
-                    sqlalchemy.orm.selectinload(Entry.user_info),
-                )
+                .options(*load_options)
                 .order_by(Entry.ts.desc())
             ).all()
             self._load_entry_flag_counts(session)
