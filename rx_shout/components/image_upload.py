@@ -10,11 +10,26 @@ from ..state import State, UPLOAD_ID
 MAX_FILE_SIZE = 5 * 1024**2  # 5 MB
 
 
-class UploadState(State):
-    """State for handling file uploads."""
-
+class UploadProgressState(rx.State):
     upload_progress: int
     is_uploading: bool = False
+
+    def on_upload_progress(self, prog: dict):
+        """Handle interim progress updates while waiting for upload."""
+        if prog["progress"] < 1:
+            self.is_uploading = True
+        else:
+            self.is_uploading = False
+        self.upload_progress = round(prog["progress"] * 100)
+
+    def cancel_upload(self, upload_id: str):
+        """Cancel the upload before it is complete."""
+        self.is_uploading = False
+        return rx.cancel_upload(upload_id)
+
+
+class UploadState(State):
+    """State for handling file uploads."""
 
     async def handle_upload(self, files: list[rx.UploadFile]):
         """Write the file bytes to disk and update the filename in base state."""
@@ -30,19 +45,6 @@ class UploadState(State):
             self.image_relative_path = filename
             break  # only allow one upload
 
-    def on_upload_progress(self, prog: dict):
-        """Handle interim progress updates while waiting for upload."""
-        if prog["progress"] < 1:
-            self.is_uploading = True
-        else:
-            self.is_uploading = False
-        self.upload_progress = round(prog["progress"] * 100)
-
-    def cancel_upload(self, upload_id: str):
-        """Cancel the upload before it is complete."""
-        self.is_uploading = False
-        return rx.cancel_upload(upload_id)
-
     def delete_uploaded_image(self):
         """If the user wants to delete the image before making a post."""
         if self.image_relative_path:
@@ -53,9 +55,9 @@ class UploadState(State):
 def is_uploading_view() -> rx.Component:
     """Rendered while upload is in progress."""
     return rx.hstack(
-        rx.progress(value=UploadState.upload_progress),
+        rx.progress(value=UploadProgressState.upload_progress),
         rx.button(
-            "Cancel", on_click=UploadState.cancel_upload(UPLOAD_ID), type="button"
+            "Cancel", on_click=UploadProgressState.cancel_upload(UPLOAD_ID), type="button"
         ),
     )
 
@@ -86,7 +88,7 @@ def upload_form() -> rx.Component:
         on_drop=UploadState.handle_upload(
             rx.upload_files(
                 upload_id=UPLOAD_ID,
-                on_upload_progress=UploadState.on_upload_progress,
+                on_upload_progress=UploadProgressState.on_upload_progress,
             ),
         ),
     )
@@ -124,7 +126,7 @@ def image_upload_component() -> rx.Component:
     return rx.cond(
         rx.selected_files(UPLOAD_ID),
         rx.cond(
-            UploadState.is_uploading,
+            UploadProgressState.is_uploading,
             is_uploading_view(),
         ),
         rx.cond(
