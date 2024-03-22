@@ -115,10 +115,10 @@ def flag_badge(e: Entry) -> rx.Component:
             rx.button(
                 rx.icon("flag", color="red"),
                 flag_count,
-                disabled=True,
                 color_scheme="orange",
+                on_click=State.unflag_entry(e.id),
             ),
-            content="Post is Flagged",
+            content="Unflag Post",
         ),
         rx.popover.root(
             rx.tooltip(

@@ -231,3 +231,19 @@ class State(UserInfoState):
             )
             session.commit()
         self.load_entries()
+
+    def unflag_entry(self, entry_id: int):
+        """Unflag an entry."""
+        if not self._is_valid_user():
+            return
+        query = delete(EntryFlags).where(
+            EntryFlags.entry_id == entry_id,
+            EntryFlags.type == "flag",
+        )
+        if not self.is_admin:
+            # Only allow users to unflag their own flags.
+            query = query.where(EntryFlags.user_id == self.user_info.id)
+        with rx.session() as session:
+            session.exec(query)
+            session.commit()
+        self.load_entries()
