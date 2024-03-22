@@ -247,3 +247,13 @@ class State(UserInfoState):
             session.exec(query)
             session.commit()
         self.load_entries()
+
+    def edit_topic_description(self, description: str):
+        """Edit the topic description."""
+        if not self.is_admin or self.topic is None:
+            return
+        with rx.session() as session:
+            self.topic.description = description
+            session.add(self.topic)
+            session.commit()
+        self.load_entries()
