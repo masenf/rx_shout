@@ -12,6 +12,7 @@ class Entry(rx.Model, table=True):
         sa_column=Column(DateTime(timezone=True), server_default=func.now()),
     )
     author_id: int = Field(nullable=False, foreign_key="author.user_id", index=True)
+    topic_id: int = Field(nullable=True, foreign_key="topic.id", index=True)
     text: str = Field(nullable=False)
     image: str = Field(nullable=True)
     hidden: bool = Field(default=False)
@@ -21,6 +22,9 @@ class Entry(rx.Model, table=True):
     )
     entry_flags: List["EntryFlags"] = Relationship(
         back_populates="entry",
+    )
+    topic: Optional["Topic"] = Relationship(
+        back_populates="entries",
     )
 
     def dict(self, *args, **kwargs) -> dict:
@@ -58,3 +62,11 @@ class EntryFlags(rx.Model, table=True):
 
     user_info: UserInfo = Relationship(back_populates="entry_flags")
     entry: Entry = Relationship(back_populates="entry_flags")
+
+
+class Topic(rx.Model, table=True):
+    name: str = Field(nullable=False, unique=True, index=True)
+    description: str = ""
+    locked: bool = Field(default=False)
+
+    entries: List[Entry] = Relationship(back_populates="topic")

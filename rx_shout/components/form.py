@@ -28,7 +28,15 @@ def submission_form() -> rx.Component:
             rx.heading(
                 rx.hstack(
                     rx.icon("megaphone", size=25),
-                    "Shout Your Thoughts Into the Void",
+                    rx.cond(
+                        State.topic,
+                        rx.cond(
+                            State.topic.description,
+                            State.topic.description,
+                            State.topic.name,
+                        ),
+                        "Shout Your Thoughts Into the Void",
+                    ),
                     align="center",
                 ),
                 size="4",

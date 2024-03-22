@@ -1,11 +1,12 @@
 """All state management for the app is defined in this module."""
+from __future__ import annotations
 
 import reflex as rx
 import reflex_google_auth
 import sqlalchemy
 from sqlmodel import delete, Session
 
-from .models import Author, Entry, EntryFlags, UserInfo
+from .models import Author, Entry, EntryFlags, Topic, UserInfo
 
 
 # The ID the will be used by the upload component.
@@ -21,7 +22,9 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
             return UserInfo(id=-1)
         with rx.session() as session:
             user = session.exec(
-                UserInfo.select().where(UserInfo.ext_id == self.tokeninfo["sub"]).options(sqlalchemy.orm.selectinload(UserInfo.author))
+                UserInfo.select()
+                .where(UserInfo.ext_id == self.tokeninfo["sub"])
+                .options(sqlalchemy.orm.selectinload(UserInfo.author))
             ).first()
             if not user:
                 user = UserInfo(
@@ -35,6 +38,8 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
                 session.add(author)
                 session.commit()
                 session.refresh(user)
+                # Populate the new author relationship.
+                user.author
             return user
 
     async def set_enabled(self, user_id: int, enable: bool = False):
@@ -69,6 +74,7 @@ class State(UserInfoState):
     """The base state for the App."""
 
     entries: list[Entry]
+    topic: Topic | None
     entry_flag_counts: dict[int, dict[str, int]]
     user_entry_flags: dict[int, dict[str, bool]]
     form_error: str = ""
@@ -94,6 +100,7 @@ class State(UserInfoState):
         with rx.session() as session:
             entry = Entry(**form_data)
             entry.author_id = self.user_info.id
+            entry.topic_id = self.topic.id if self.topic else None
             if self.image_relative_path:
                 entry.image = self.image_relative_path
                 if not entry.text:
@@ -103,7 +110,24 @@ class State(UserInfoState):
             session.refresh(entry)
         self.image_relative_path = ""
         self.form_error = ""
-        return [rx.set_value("text", ""), rx.redirect("/")]
+        return [rx.set_value("text", ""), rx.redirect(self.router.page.raw_path)]
+
+    def _load_topic(self, session) -> Topic | None:
+        """Load the topic (if any)."""
+        topic_name = self.router.page.params.get("topic")
+        if not topic_name:
+            self.topic = None
+            return
+        topic = session.exec(Topic.select().where(Topic.name == topic_name)).one_or_none()
+        if topic is None:
+            topic = Topic(
+                name=topic_name,
+                description=self.router.page.params.get("description", ""),
+            )
+            session.add(topic)
+            session.commit()
+            session.refresh(topic)
+        return topic
 
     def load_entries(self):
         """Load entries from the database."""
@@ -116,9 +140,13 @@ class State(UserInfoState):
                 sqlalchemy.orm.selectinload(Entry.author),
             ]
         with rx.session() as session:
+            self.topic = self._load_topic(session)
             self.entries = session.exec(
                 Entry.select()
-                .where(Entry.hidden == False)
+                .where(
+                    Entry.hidden == False,
+                    Entry.topic_id == (self.topic.id if self.topic else None),
+                )
                 .options(*load_options)
                 .order_by(Entry.ts.desc())
             ).all()
