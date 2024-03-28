@@ -24,7 +24,7 @@ If the app is deployed on `https://rx-shout.mooo.com` and the box is being embed
 a static site generator like jekyll:
 
 ```html
-<iframe src="https://rx-shout.mooo.com/?topic={{ page.url }}&description={{ page.title }}" scrolling="no" style="width: 100%; height: 600px; overflow: hidden"></iframe>
+<iframe src="https://rx-shout.mooo.com/?topic={{ page.url }}&description={{ page.title }}" style="width: 100%; height: 600px; overflow-x: hidden"></iframe>
 ```
 
 ## Run With Prod Services
