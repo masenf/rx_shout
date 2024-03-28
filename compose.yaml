@@ -9,7 +9,9 @@ services:
   app:
     image: local/reflex-app
     environment:
-      DB_URL: sqlite:///data/reflex.db
+      - DB_URL=sqlite:///data/reflex.db
+      - TELEMETRY_ENABLED
+      - GOOGLE_CLIENT_ID
     build:
       context: .
       dockerfile: prod.Dockerfile
