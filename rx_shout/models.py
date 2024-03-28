@@ -1,4 +1,5 @@
 """Database models used by the app are defined in this module."""
+
 from typing import List, Optional
 import datetime
 
@@ -45,7 +46,13 @@ class UserInfo(rx.Model, table=True):
 
 
 class Author(rx.Model, table=True):
-    user_id: int = Field(nullable=False, foreign_key="userinfo.id", index=True, unique=True, primary_key=True)
+    user_id: int = Field(
+        nullable=False,
+        foreign_key="userinfo.id",
+        index=True,
+        unique=True,
+        primary_key=True,
+    )
     name: str = Field(nullable=False)
     picture: str = Field(nullable=False)
 

@@ -1,4 +1,5 @@
 """Handle Google Auth."""
+
 import reflex as rx
 
 import reflex_google_auth
@@ -23,7 +24,10 @@ def google_auth_button():
     return rx.box(
         reflex_google_auth.google_oauth_provider(
             reflex_google_auth.google_login(
-                on_success=[reflex_google_auth.GoogleAuthState.on_success, State.reload_after_login],
+                on_success=[
+                    reflex_google_auth.GoogleAuthState.on_success,
+                    State.reload_after_login,
+                ],
             ),
         ),
         box_shadow="rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",  # noqa

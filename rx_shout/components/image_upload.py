@@ -1,4 +1,5 @@
 """Frontend components for handling image upload."""
+
 import uuid
 from pathlib import Path
 
@@ -57,7 +58,9 @@ def is_uploading_view() -> rx.Component:
     return rx.hstack(
         rx.progress(value=UploadProgressState.upload_progress),
         rx.button(
-            "Cancel", on_click=UploadProgressState.cancel_upload(UPLOAD_ID), type="button"
+            "Cancel",
+            on_click=UploadProgressState.cancel_upload(UPLOAD_ID),
+            type="button",
         ),
     )
 

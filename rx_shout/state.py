@@ -1,4 +1,5 @@
 """All state management for the app is defined in this module."""
+
 from __future__ import annotations
 
 import reflex as rx
@@ -34,7 +35,11 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
                 session.add(user)
                 session.commit()
                 session.refresh(user)
-                author = Author(user_id=user.id, name=self.tokeninfo["name"], picture=self.tokeninfo["picture"])
+                author = Author(
+                    user_id=user.id,
+                    name=self.tokeninfo["name"],
+                    picture=self.tokeninfo["picture"],
+                )
                 session.add(author)
                 session.commit()
                 session.refresh(user)
@@ -118,7 +123,9 @@ class State(UserInfoState):
         if not topic_name:
             self.topic = None
             return
-        topic = session.exec(Topic.select().where(Topic.name == topic_name)).one_or_none()
+        topic = session.exec(
+            Topic.select().where(Topic.name == topic_name)
+        ).one_or_none()
         if topic is None:
             topic = Topic(
                 name=topic_name,
@@ -133,7 +140,9 @@ class State(UserInfoState):
         """Load entries from the database."""
         if self.is_admin:
             load_options = [
-                sqlalchemy.orm.selectinload(Entry.author).options(sqlalchemy.orm.selectinload(Author.user_info)),
+                sqlalchemy.orm.selectinload(Entry.author).options(
+                    sqlalchemy.orm.selectinload(Author.user_info)
+                ),
             ]
         else:
             load_options = [

@@ -1,4 +1,5 @@
 """Frontend components for displaying entries."""
+
 import reflex as rx
 
 from ..models import Author, Entry

@@ -24,7 +24,8 @@ def index() -> rx.Component:
             rx.vstack(
                 rx.card(
                     rx.cond(
-                        reflex_google_auth.GoogleAuthState.token_is_valid & State.user_info.enabled,
+                        reflex_google_auth.GoogleAuthState.token_is_valid
+                        & State.user_info.enabled,
                         submission_form(),
                         rx.flex(
                             auth_error_callout(),
