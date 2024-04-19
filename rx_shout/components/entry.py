@@ -133,7 +133,7 @@ def flag_badge(e: Entry) -> rx.Component:
                     rx.button(
                         rx.icon("flag"),
                         "Flag Post",
-                        rx.icon("alert_triangle"),
+                        rx.icon("triangle_alert"),
                         on_click=State.flag_entry(e.id),
                         width="100%",
                         color_scheme="orange",

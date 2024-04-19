@@ -11,7 +11,7 @@ def form_error_callout() -> rx.Component:
     return rx.cond(
         State.form_error,
         rx.callout.root(
-            rx.callout.icon(rx.icon("alert-triangle", size=20)),
+            rx.callout.icon(rx.icon("triangle_alert", size=20)),
             rx.callout.text(State.form_error),
             size="1",
             color_scheme="red",

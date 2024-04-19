@@ -101,7 +101,7 @@ def uploaded_image_view() -> rx.Component:
     """Rendered when an image has been uploaded and allows the user to delete it."""
     return rx.box(
         rx.icon(
-            "x-circle",
+            "circle_x",
             size=25,
             on_click=UploadState.delete_uploaded_image,
             color="var(--gray-10)",
@@ -119,7 +119,7 @@ def uploaded_image_view() -> rx.Component:
             src=rx.get_upload_url(UploadState.image_relative_path),
             height="15em",
         ),
-        # ensure x-circle is positioned relative to the box
+        # ensure circle_x is positioned relative to the box
         position="relative",
     )
 
