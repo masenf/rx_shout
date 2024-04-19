@@ -45,3 +45,17 @@ docker compose -f compose.yaml -f compose.prod.yaml -f compose.tools.yaml up
 * Access redis store via p3x-redis-ui on `http://localhost:8081`
 
 Based on the example at [reflex/reflex-dev](https://github.com/reflex-dev/reflex/tree/main/docker-example)
+
+## Backing Up The DB and Uploaded Files
+
+```shell
+docker compose exec -it db pg_dump -U postgres > backup.sql
+docker compose exec -it app tar cvz /app/uploaded_files > uploaded_files.tar.gz
+```
+
+## Restoring the DB and Uploaded Files
+
+```shell
+docker compose exec -it db psql -U postgres < backup.sql
+docker compose exec -it app tar -C / xvz < uploaded_files.tar.gz
+```
