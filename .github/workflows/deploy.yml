@@ -1,0 +1,33 @@
+# Set Github Actions secrets
+#  - DOCKER_HOST: The IP address of the remote host to deploy on
+#  - SSH_PRIVATE_KEY: The private key to use for SSH
+#  - DOMAIN: The domain to use for the app
+
+on:
+    push:
+        branches: [main]
+
+env:
+    DOMAIN: ${{ secrets.DOMAIN }}
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v4
+        # copy ssh key to ~/.ssh/id_rsa
+        - name: Copy SSH key
+          run: |
+            mkdir -p ~/.ssh/
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H ${{ secrets.DOCKER_HOST }} > ~/.ssh/known_hosts
+        # rsync local checkout to deploy directory
+        - name: Rsync
+          run: rsync -avz --delete --exclude .git/ --exclude .github/ . root@${{ secrets.DOCKER_HOST }}:/app
+        # build image with docker compose
+        - name: Build image
+          run: docker-compose build
+        # restart the app on the remote host
+        - name: Restart App
+          run: ssh root@${{ secrets.DOCKER_HOST }} "DOMAIN=${{ secrets.DOMAIN }} cd /app && docker-compose down && docker-compose -f compose.yaml -f compose.prod.yaml up -d"
