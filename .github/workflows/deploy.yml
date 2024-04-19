@@ -31,6 +31,12 @@ jobs:
         # build image with docker compose
         - name: Build image
           run: ssh root@${{ secrets.DOCKER_HOST}} "export DOMAIN=${{ secrets.DOMAIN }}; cd /app && docker compose build"
-        # restart the app on the remote host
-        - name: Restart App
-          run: ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose -f compose.yaml -f compose.prod.yaml up -d"
+        # Restart the webserver to serve new frontend
+        - name: Restart Webserver
+          run: ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose -f compose.yaml -f compose.prod.yaml up -d webserver --no-deps"
+        # Bring up the new app container
+        - name: Create new app container
+          run: ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose -f compose.yaml -f compose.prod.yaml up -d app --scale app=2 --no-recreate"
+        # Delete the old container after 30 seconds
+        - name: Delete old container
+          run: sleep 30 && ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose ps app --format '{{.Names}}' | head -n 1 | xargs docker rm -f && docker compose -f compose.yaml -f compose.prod.yaml up -d --scale app=1 --no-recreate"
