@@ -24,7 +24,7 @@ jobs:
           run: rsync -avz --delete --exclude .git/ --exclude .github/ . root@${{ secrets.DOCKER_HOST }}:/app
         # build image with docker compose
         - name: Build image
-          run: ssh root@${{ secrets.DOCKER_HOST}} "DOMAIN=${{ secrets.DOMAIN }} docker compose build"
+          run: ssh root@${{ secrets.DOCKER_HOST}} "export DOMAIN=${{ secrets.DOMAIN }}; cd /app && docker compose build"
         # restart the app on the remote host
         - name: Restart App
-          run: ssh root@${{ secrets.DOCKER_HOST }} "DOMAIN=${{ secrets.DOMAIN }} cd /app && docker compose down && docker compose -f compose.yaml -f compose.prod.yaml up -d"
+          run: ssh root@${{ secrets.DOCKER_HOST }} "export DOMAIN=${{ secrets.DOMAIN }}; cd /app && docker compose down && docker compose -f compose.yaml -f compose.prod.yaml up -d"
