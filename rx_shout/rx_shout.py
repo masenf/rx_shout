@@ -19,7 +19,13 @@ from .state import State
 )
 def index() -> rx.Component:
     return rx.fragment(
-        rx.color_mode.button(rx.color_mode.icon(), float="right"),
+        rx.hstack(
+            rx.icon("sun", size=16),
+            rx.color_mode.switch(size="1"),
+            rx.icon("moon", size=16),
+            margin="8px",
+            float="right",
+        ),
         rx.center(
             rx.vstack(
                 rx.card(
