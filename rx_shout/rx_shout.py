@@ -53,6 +53,7 @@ def index() -> rx.Component:
                     margin_y="2em",
                     width="100%",
                 ),
+                rx.logo(),
                 width=["100vw", "75vw", "75vw", "50vw", "50vw"],
             ),
             width="100%",
