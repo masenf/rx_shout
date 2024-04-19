@@ -59,3 +59,14 @@ docker compose exec -it app tar cvz /app/uploaded_files > uploaded_files.tar.gz
 docker compose exec -T db psql -U postgres < backup.sql
 docker compose exec -T app tar xvz -C / < uploaded_files.tar.gz
 ```
+
+## Automatic Deploy on Push
+
+This repo has a [workflow](.github/workflows/deploy.yaml) that will
+automatically deploy the app to a server on push to the main branch. It requires
+some secrets to be set in the repo settings as described in the comments at the
+top of the workflow.
+
+The target server must already have `docker compose` installed and working,
+firewall rules allowing SSH, HTTP, and HTTPS ports, and an SSH key with a
+docker-enabled user that can copy the app to `/app` and build/run it.
