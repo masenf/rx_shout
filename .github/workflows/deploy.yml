@@ -8,6 +8,10 @@ on:
     push:
         branches: [main]
 
+# Avoid racing deployments
+concurrency:
+    group: main-deploy
+
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -41,4 +45,5 @@ jobs:
         - name: Delete old container
           run: sleep 30 && ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose ps app --format '{{.Names}}' | head -n 1 | xargs docker rm -f && docker compose -f compose.yaml -f compose.prod.yaml up -d --scale app=1 --no-recreate"
         # Clean up unused images, etc on server
-        - run: ssh root@${{ secrets.DOCKER_HOST }} "docker system prune -f"
+        - name: Docker system prune
+          run: ssh root@${{ secrets.DOCKER_HOST }} "docker system prune -f"
