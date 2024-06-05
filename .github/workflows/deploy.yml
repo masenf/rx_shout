@@ -43,7 +43,7 @@ jobs:
           run: ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose -f compose.yaml -f compose.prod.yaml up -d app --scale app=2 --no-recreate"
         # Delete the old container after 30 seconds
         - name: Delete old container
-          run: sleep 30 && ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose ps app | tail -n +2 | cut -d ' ' -f 1 | sort -V | xargs docker rm -f && docker compose -f compose.yaml -f compose.prod.yaml up -d --scale app=1 --no-recreate"
+          run: sleep 30 && ssh root@${{ secrets.DOCKER_HOST }} "cd /app && docker compose ps app | tail -n +2 | cut -d ' ' -f 1 | sort -V | head -n 1 | xargs docker rm -f && docker compose -f compose.yaml -f compose.prod.yaml up -d --scale app=1 --no-recreate"
         # Clean up unused images, etc on server
         - name: Docker system prune
           run: ssh root@${{ secrets.DOCKER_HOST }} "docker system prune -f"
