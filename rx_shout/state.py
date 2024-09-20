@@ -17,7 +17,7 @@ UPLOAD_ID = "upload_image"
 class UserInfoState(reflex_google_auth.GoogleAuthState):
     auth_error: str = ""
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def user_info(self) -> UserInfo:
         if not self.tokeninfo:
             return UserInfo(id=-1)
@@ -59,7 +59,7 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
             session.commit()
         return State.load_entries
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def is_admin(self) -> bool:
         if self.token_is_valid:
             return self.user_info.id == 1 and self.user_info.enabled
