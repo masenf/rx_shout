@@ -37,13 +37,11 @@ class EditTopicViewState(UserInfoState):
 def edit_topic_view() -> rx.Component:
     return rx.form.root(
         rx.hstack(
-            rx.input.root(
+            rx.input(
                 rx.input.slot(rx.icon("pencil", size=20)),
-                rx.input(
-                    placeholder="Edit topic description...",
-                    default_value=State.topic.description,
-                    id="topic_description",
-                ),
+                placeholder="Edit topic description...",
+                default_value=State.topic.description,
+                id="topic_description",
                 width="100%",
             ),
             rx.icon_button(rx.icon("save")),
@@ -101,20 +99,16 @@ def submission_form() -> rx.Component:
         rx.form(
             rx.vstack(
                 rx.hstack(
-                    rx.input.root(
+                    rx.input(
                         rx.input.slot(rx.icon("user", size=20)),
-                        rx.input(
-                            value=UserInfoState.user_info.author.name,
-                            read_only=True,
-                        ),
+                        value=UserInfoState.user_info.author.name,
+                        read_only=True,
                         width="100%",
                     ),
-                    rx.input.root(
+                    rx.input(
                         rx.input.slot(rx.icon("at_sign", size=20)),
-                        rx.input(
-                            value=UserInfoState.user_info.email,
-                            read_only=True,
-                        ),
+                        value=UserInfoState.user_info.email,
+                        read_only=True,
                         width="100%",
                     ),
                     rx.icon_button(
@@ -125,9 +119,10 @@ def submission_form() -> rx.Component:
                     ),
                     width="100%",
                 ),
-                rx.input.root(
+                rx.input(
                     rx.input.slot(rx.icon("text", size=20)),
-                    rx.input(placeholder="Enter text here...", id="text"),
+                    placeholder="Enter text here...",
+                    id="text",
                     width="100%",
                 ),
                 image_upload_component(),
