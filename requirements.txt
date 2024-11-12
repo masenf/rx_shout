@@ -1,4 +1,4 @@
-reflex==0.6.4a3
+reflex==0.6.5a3
 reflex-chakra>=0.6.0
 reflex-google-auth>=0.0.4
 psycopg2
