@@ -1,5 +1,7 @@
 """This is an shoutbox-like app for posting text and images."""
 
+import importlib.metadata
+import sys
 import reflex as rx
 import reflex_google_auth
 
@@ -53,7 +55,11 @@ def index() -> rx.Component:
                     margin_y="2em",
                     width="100%",
                 ),
-                rx.logo(),
+                rx.hstack(
+                    rx.text(f"Python v{sys.version}"),
+                    rx.logo(),
+                    rx.text(f"v{importlib.metadata.version('reflex')}"),
+                ),
                 width=["100vw", "75vw", "75vw", "50vw", "50vw"],
             ),
             width="100%",
