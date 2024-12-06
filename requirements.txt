@@ -1,7 +1,18 @@
 #reflex==0.6.6.post2
+# Install from test branch
 reflex @ git+https://github.com/reflex-dev/reflex@masenf/db-reuse-engine
-reflex-chakra>=0.6.0
+
+# For Sign In With Google integration
 reflex-google-auth>=0.0.4
+
+# For postgres access
 psycopg[binary]
+
+# For async db access with sqlalchemy
+greenlet
+
+# For uploading to S3-compatible storage
 boto3
+
+# For deploying to Reflex Cloud with .env file
 python-dotenv

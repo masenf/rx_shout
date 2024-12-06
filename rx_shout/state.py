@@ -7,7 +7,8 @@ from typing import Any
 import reflex as rx
 import reflex_google_auth
 import sqlalchemy
-from sqlmodel import delete, Session
+from sqlmodel import delete
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from . import s3
 from .models import Author, Entry, EntryFlags, Topic, UserInfo
@@ -64,12 +65,14 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
         """Ban or unban a user."""
         if not self.is_admin:
             return
-        with rx.session() as session:
-            user = session.exec(UserInfo.select().where(UserInfo.id == user_id)).first()
+        async with rx.asession() as asession:
+            user = (
+                await asession.exec(UserInfo.select().where(UserInfo.id == user_id))
+            ).first()
             if user:
                 user.enabled = enable
-            session.add(user)
-            session.commit()
+            asession.add(user)
+            await asession.commit()
         return State.load_entries
 
     @rx.var(cache=True)
@@ -120,7 +123,7 @@ class State(UserInfoState):
         self.loading.posting = True
         yield
         try:
-            with rx.session() as session:
+            async with rx.asession() as asession:
                 entry = Entry(**form_data)
                 entry.author_id = self.user_info.id
                 entry.topic_id = self.topic.id if self.topic else None
@@ -137,35 +140,35 @@ class State(UserInfoState):
                         entry.image = self.image_relative_path
                     if not entry.text:
                         entry.text = ""
-                session.add(entry)
-                session.commit()
-                session.refresh(entry)
+                asession.add(entry)
+                await asession.commit()
+                await asession.refresh(entry)
             self.image_relative_path = ""
             self.form_error = ""
             yield [rx.set_value("text", ""), rx.redirect(self.router.page.raw_path)]
         finally:
             self.loading.posting = False
 
-    def _load_topic(self, session: Session) -> Topic | None:
+    async def _load_topic(self, asession: AsyncSession) -> Topic | None:
         """Load the topic (if any)."""
         topic_name = self.router.page.params.get("topic")
         if not topic_name:
             self.topic = None
             return
-        topic = session.exec(
-            Topic.select().where(Topic.name == topic_name)
+        topic = (
+            await asession.exec(Topic.select().where(Topic.name == topic_name))
         ).one_or_none()
         if topic is None:
             topic = Topic(
                 name=topic_name,
                 description=self.router.page.params.get("description", ""),
             )
-            session.add(topic)
-            session.commit()
-            session.refresh(topic)
+            asession.add(topic)
+            await asession.commit()
+            await asession.refresh(topic)
         return topic
 
-    def load_entries(self):
+    async def load_entries(self):
         """Load entries from the database."""
         self.loading.posts = True
         yield
@@ -180,111 +183,119 @@ class State(UserInfoState):
                 load_options = [
                     sqlalchemy.orm.selectinload(Entry.author),
                 ]
-            with rx.session() as session:
-                self.topic = self._load_topic(session)
-                self.entries = session.exec(
-                    Entry.select()
-                    .where(
-                        Entry.hidden == False,  # noqa: E712
-                        Entry.topic_id == (self.topic.id if self.topic else None),
+            async with rx.asession() as asession:
+                self.topic = await self._load_topic(asession)
+                self.entries = (
+                    await asession.exec(
+                        Entry.select()
+                        .where(
+                            Entry.hidden == False,  # noqa: E712
+                            Entry.topic_id == (self.topic.id if self.topic else None),
+                        )
+                        .options(*load_options)
+                        .order_by(Entry.ts.desc())
                     )
-                    .options(*load_options)
-                    .order_by(Entry.ts.desc())
                 ).all()
-                self._load_entry_flag_counts(session)
-                self._load_user_entry_flags(session)
+                await self._load_entry_flag_counts(asession)
+                await self._load_user_entry_flags(asession)
         finally:
             self.loading.posts = False
             self.loading.liking = None
             self.loading.flagging = None
             self.loading.deleting = None
 
-    def _load_entry_flag_counts(self, session: Session):
+    async def _load_entry_flag_counts(self, asession: AsyncSession):
         self.entry_flag_counts = {
             row[0]: {
                 "flag": row[1] if self.is_admin else 0,
                 "like": row[2],
             }
-            for row in session.execute(
-                sqlalchemy.text(
-                    "SELECT "
-                    "entry_id, "
-                    "COUNT(CASE type WHEN 'flag' THEN 1 ELSE NULL END) as flags, "
-                    "COUNT(CASE type WHEN 'like' THEN 1 ELSE NULL END) as likes "
-                    "FROM entryflags "
-                    "GROUP BY entry_id"
-                ),
+            for row in (
+                await asession.execute(
+                    sqlalchemy.text(
+                        "SELECT "
+                        "entry_id, "
+                        "COUNT(CASE type WHEN 'flag' THEN 1 ELSE NULL END) as flags, "
+                        "COUNT(CASE type WHEN 'like' THEN 1 ELSE NULL END) as likes "
+                        "FROM entryflags "
+                        "GROUP BY entry_id"
+                    ),
+                )
             ).all()
         }
 
-    def _load_user_entry_flags(self, session: Session):
+    async def _load_user_entry_flags(self, asession: AsyncSession):
         if self.user_info.id:
             self.user_entry_flags = {}
-            for row in session.execute(
-                sqlalchemy.text(
-                    "SELECT entry_id, type "
-                    "FROM entryflags "
-                    "WHERE user_id = :user_id"
-                ),
-                {"user_id": self.user_info.id},
+            for row in (
+                await asession.execute(
+                    sqlalchemy.text(
+                        "SELECT entry_id, type "
+                        "FROM entryflags "
+                        "WHERE user_id = :user_id"
+                    ),
+                    {"user_id": self.user_info.id},
+                )
             ).all():
                 self.user_entry_flags.setdefault(row[0], {})[row[1]] = True
 
-    def delete_entry(self, entry_id: int):
+    async def delete_entry(self, entry_id: int):
         """Delete an entry from the database."""
         if not self.is_admin:
             return
         self.loading.deleting = entry_id
         yield
-        with rx.session() as session:
-            entry = session.exec(Entry.select().where(Entry.id == entry_id)).first()
+        async with rx.asession() as asession:
+            entry = (
+                await asession.exec(Entry.select().where(Entry.id == entry_id))
+            ).first()
             if entry:
                 entry.hidden = True
-            session.add(entry)
-            session.commit()
-        return State.load_entries
+            asession.add(entry)
+            await asession.commit()
+        yield State.load_entries
 
-    def _flag_entry(self, entry_id: int, type_: str):
+    async def _flag_entry(self, entry_id: int, type_: str):
         if not self._is_valid_user():
             return
-        with rx.session() as session:
-            session.add(
+        async with rx.asession() as asession:
+            asession.add(
                 EntryFlags(user_id=self.user_info.id, entry_id=entry_id, type=type_)
             )
-            session.commit()
+            await asession.commit()
 
-    def like_entry(self, entry_id: int):
+    async def like_entry(self, entry_id: int):
         """Like an entry."""
         self.loading.liking = entry_id
         yield
-        self._flag_entry(entry_id, "like")
-        return State.load_entries
+        await self._flag_entry(entry_id, "like")
+        yield State.load_entries
 
-    def flag_entry(self, entry_id: int):
+    async def flag_entry(self, entry_id: int):
         """Flag an entry."""
         self.loading.flagging = entry_id
         yield
-        self._flag_entry(entry_id, "flag")
-        return State.load_entries
+        await self._flag_entry(entry_id, "flag")
+        yield State.load_entries
 
-    def unlike_entry(self, entry_id: int):
+    async def unlike_entry(self, entry_id: int):
         """Unlike an entry."""
         if not self._is_valid_user():
             return
         self.loading.liking = entry_id
         yield
-        with rx.session() as session:
-            session.exec(
+        async with rx.asession() as asession:
+            await asession.exec(
                 delete(EntryFlags).where(
                     EntryFlags.user_id == self.user_info.id,
                     EntryFlags.entry_id == entry_id,
                     EntryFlags.type == "like",
                 )
             )
-            session.commit()
-        return State.load_entries
+            await asession.commit()
+        yield State.load_entries
 
-    def unflag_entry(self, entry_id: int):
+    async def unflag_entry(self, entry_id: int):
         """Unflag an entry."""
         if not self._is_valid_user():
             return
@@ -297,17 +308,17 @@ class State(UserInfoState):
         if not self.is_admin:
             # Only allow users to unflag their own flags.
             query = query.where(EntryFlags.user_id == self.user_info.id)
-        with rx.session() as session:
-            session.exec(query)
-            session.commit()
-        return State.load_entries
+        async with rx.asession() as asession:
+            await asession.exec(query)
+            await asession.commit()
+        yield State.load_entries
 
-    def edit_topic_description(self, description: str):
+    async def edit_topic_description(self, description: str):
         """Edit the topic description."""
         if not self.is_admin or self.topic is None:
             return
-        with rx.session() as session:
+        async with rx.asession() as asession:
             self.topic.description = description
-            session.add(self.topic)
-            session.commit()
-        return State.load_entries
+            asession.add(self.topic)
+            await asession.commit()
+        yield State.load_entries
