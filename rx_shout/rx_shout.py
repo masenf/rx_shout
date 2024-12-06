@@ -68,3 +68,4 @@ def index() -> rx.Component:
 
 
 app = rx.App()
+rx.Model.migrate()

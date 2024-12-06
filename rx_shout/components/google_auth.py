@@ -26,7 +26,7 @@ def google_auth_button():
             reflex_google_auth.google_login(
                 on_success=[
                     reflex_google_auth.GoogleAuthState.on_success,
-                    State.reload_after_login,
+                    State.reload_after_login(),
                 ],
             ),
         ),

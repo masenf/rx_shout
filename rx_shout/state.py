@@ -1,12 +1,15 @@
 """All state management for the app is defined in this module."""
 
 from __future__ import annotations
+import functools
+from typing import Any
 
 import reflex as rx
 import reflex_google_auth
 import sqlalchemy
 from sqlmodel import delete, Session
 
+from . import s3
 from .models import Author, Entry, EntryFlags, Topic, UserInfo
 
 
@@ -63,6 +66,7 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
     def is_admin(self) -> bool:
         if self.token_is_valid:
             return self.user_info.id == 1 and self.user_info.enabled
+        return False
 
     def _is_valid_user(self):
         if self.token_is_valid and self.user_info.id > 0:
@@ -85,7 +89,7 @@ class State(UserInfoState):
     form_error: str = ""
     image_relative_path: str
 
-    def reload_after_login(self, data):
+    def reload_after_login(self):
         self.reset()
         self.load_entries()
         self._is_valid_user()
@@ -94,7 +98,7 @@ class State(UserInfoState):
         self.logout()
         self.reload_after_login(None)
 
-    async def handle_submit(self, form_data: dict[str, str]):
+    async def handle_submit(self, form_data: dict[str, Any]):
         """Handle form submission."""
         form_data.pop(UPLOAD_ID, None)
         if not self._is_valid_user():
@@ -107,7 +111,16 @@ class State(UserInfoState):
             entry.author_id = self.user_info.id
             entry.topic_id = self.topic.id if self.topic else None
             if self.image_relative_path:
-                entry.image = self.image_relative_path
+                if s3.endpoint_url:
+                    entry.image = await rx._x.run_in_thread(
+                        functools.partial(
+                            s3.upload_image,
+                            self.image_relative_path,
+                            delete_original=True,
+                        )
+                    )
+                else:
+                    entry.image = self.image_relative_path
                 if not entry.text:
                     entry.text = ""
             session.add(entry)
@@ -117,7 +130,7 @@ class State(UserInfoState):
         self.form_error = ""
         return [rx.set_value("text", ""), rx.redirect(self.router.page.raw_path)]
 
-    def _load_topic(self, session) -> Topic | None:
+    def _load_topic(self, session: Session) -> Topic | None:
         """Load the topic (if any)."""
         topic_name = self.router.page.params.get("topic")
         if not topic_name:
@@ -153,7 +166,7 @@ class State(UserInfoState):
             self.entries = session.exec(
                 Entry.select()
                 .where(
-                    Entry.hidden == False,
+                    Entry.hidden == False,  # noqa: E712
                     Entry.topic_id == (self.topic.id if self.topic else None),
                 )
                 .options(*load_options)

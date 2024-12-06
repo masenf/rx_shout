@@ -178,7 +178,11 @@ def entry_view(e: Entry) -> rx.Component:
             entry_content(e),
             rx.cond(
                 e.image,
-                rx.image(src=rx.get_upload_url(e.image), width="100%"),
+                rx.cond(
+                    e.image.startswith("http"),
+                    rx.image(src=e.image, width="100%"),
+                    rx.image(src=rx.get_upload_url(e.image), width="100%"),
+                ),
             ),
             entry_footer(e),
         ),

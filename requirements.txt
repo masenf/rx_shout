@@ -1,4 +1,6 @@
-reflex==0.6.6a3
+reflex==0.6.6.post2
 reflex-chakra>=0.6.0
 reflex-google-auth>=0.0.4
-psycopg
+psycopg[binary]
+boto3
+python-dotenv
