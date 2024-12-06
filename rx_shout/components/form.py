@@ -1,5 +1,6 @@
 """The form for submitting new entries."""
 
+from typing import Any
 import reflex as rx
 
 from ..state import State, UserInfoState
@@ -28,7 +29,7 @@ class EditTopicViewState(UserInfoState):
         if self.is_admin:
             self.editor_open = value
 
-    def handle_submit(self, form_dict):
+    def handle_submit(self, form_dict: dict[str, Any]):
         self.editor_open = False
         if form_dict.get("topic_description"):
             return State.edit_topic_description(form_dict["topic_description"])
@@ -130,12 +131,13 @@ def submission_form() -> rx.Component:
                     rx.button(
                         "Reload",
                         rx.icon("refresh-cw", size=20),
+                        loading=State.loading.posts,
                         on_click=State.load_entries,
                         type="button",
                         color_scheme="gray",
                     ),
                     rx.spacer(),
-                    rx.button("Post", rx.icon("send", size=20)),
+                    rx.button("Post", rx.icon("send", size=20), loading=State.loading.posting),
                     width="100%",
                 ),
                 gap="1em",

@@ -32,9 +32,12 @@ class UploadProgressState(rx.State):
 class UploadState(State):
     """State for handling file uploads."""
 
-    async def handle_upload(self, files: list[rx.UploadFile]):
+    async def handle_upload(self, files: list[rx.UploadFile] = []):
         """Write the file bytes to disk and update the filename in base state."""
         if not self._is_valid_user():
+            return
+        if not files:
+            yield rx.toast("File size too large or invalid format")
             return
         yield rx.clear_selected_files(UPLOAD_ID)
         for file in files:
@@ -49,7 +52,10 @@ class UploadState(State):
     def delete_uploaded_image(self):
         """If the user wants to delete the image before making a post."""
         if self.image_relative_path:
-            (Path(rx.get_upload_dir()) / self.image_relative_path).unlink()
+            try:
+                (Path(rx.get_upload_dir()) / self.image_relative_path).unlink()
+            except FileNotFoundError:
+                pass
             self.image_relative_path = ""
 
 
