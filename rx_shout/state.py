@@ -17,6 +17,16 @@ from .models import Author, Entry, EntryFlags, Topic, UserInfo
 UPLOAD_ID = "upload_image"
 
 
+class LoadingState(rx.Base):
+    """Control loading spinners for different controls."""
+
+    posts: bool = False
+    posting: bool = False
+    liking: int | None = None
+    flagging: int | None = None
+    deleting: int | None = None
+
+
 class UserInfoState(reflex_google_auth.GoogleAuthState):
     auth_error: str = ""
 
@@ -88,15 +98,16 @@ class State(UserInfoState):
     user_entry_flags: dict[int, dict[str, bool]]
     form_error: str = ""
     image_relative_path: str
+    loading: LoadingState = LoadingState()
 
     def reload_after_login(self):
         self.reset()
-        self.load_entries()
         self._is_valid_user()
+        return State.load_entries()
 
     def logout_and_reset(self):
         self.logout()
-        self.reload_after_login(None)
+        return self.reload_after_login()
 
     async def handle_submit(self, form_data: dict[str, Any]):
         """Handle form submission."""
@@ -106,29 +117,34 @@ class State(UserInfoState):
         if not form_data.get("text") and not self.image_relative_path:
             self.form_error = "You have to at least write something or upload an image."
             return
-        with rx.session() as session:
-            entry = Entry(**form_data)
-            entry.author_id = self.user_info.id
-            entry.topic_id = self.topic.id if self.topic else None
-            if self.image_relative_path:
-                if s3.endpoint_url:
-                    entry.image = await rx._x.run_in_thread(
-                        functools.partial(
-                            s3.upload_image,
-                            self.image_relative_path,
-                            delete_original=True,
+        self.loading.posting = True
+        yield
+        try:
+            with rx.session() as session:
+                entry = Entry(**form_data)
+                entry.author_id = self.user_info.id
+                entry.topic_id = self.topic.id if self.topic else None
+                if self.image_relative_path:
+                    if s3.endpoint_url:
+                        entry.image = await rx._x.run_in_thread(
+                            functools.partial(
+                                s3.upload_image,
+                                self.image_relative_path,
+                                delete_original=True,
+                            )
                         )
-                    )
-                else:
-                    entry.image = self.image_relative_path
-                if not entry.text:
-                    entry.text = ""
-            session.add(entry)
-            session.commit()
-            session.refresh(entry)
-        self.image_relative_path = ""
-        self.form_error = ""
-        return [rx.set_value("text", ""), rx.redirect(self.router.page.raw_path)]
+                    else:
+                        entry.image = self.image_relative_path
+                    if not entry.text:
+                        entry.text = ""
+                session.add(entry)
+                session.commit()
+                session.refresh(entry)
+            self.image_relative_path = ""
+            self.form_error = ""
+            yield [rx.set_value("text", ""), rx.redirect(self.router.page.raw_path)]
+        finally:
+            self.loading.posting = False
 
     def _load_topic(self, session: Session) -> Topic | None:
         """Load the topic (if any)."""
@@ -151,29 +167,37 @@ class State(UserInfoState):
 
     def load_entries(self):
         """Load entries from the database."""
-        if self.is_admin:
-            load_options = [
-                sqlalchemy.orm.selectinload(Entry.author).options(
-                    sqlalchemy.orm.selectinload(Author.user_info)
-                ),
-            ]
-        else:
-            load_options = [
-                sqlalchemy.orm.selectinload(Entry.author),
-            ]
-        with rx.session() as session:
-            self.topic = self._load_topic(session)
-            self.entries = session.exec(
-                Entry.select()
-                .where(
-                    Entry.hidden == False,  # noqa: E712
-                    Entry.topic_id == (self.topic.id if self.topic else None),
-                )
-                .options(*load_options)
-                .order_by(Entry.ts.desc())
-            ).all()
-            self._load_entry_flag_counts(session)
-            self._load_user_entry_flags(session)
+        self.loading.posts = True
+        yield
+        try:
+            if self.is_admin:
+                load_options = [
+                    sqlalchemy.orm.selectinload(Entry.author).options(
+                        sqlalchemy.orm.selectinload(Author.user_info)
+                    ),
+                ]
+            else:
+                load_options = [
+                    sqlalchemy.orm.selectinload(Entry.author),
+                ]
+            with rx.session() as session:
+                self.topic = self._load_topic(session)
+                self.entries = session.exec(
+                    Entry.select()
+                    .where(
+                        Entry.hidden == False,  # noqa: E712
+                        Entry.topic_id == (self.topic.id if self.topic else None),
+                    )
+                    .options(*load_options)
+                    .order_by(Entry.ts.desc())
+                ).all()
+                self._load_entry_flag_counts(session)
+                self._load_user_entry_flags(session)
+        finally:
+            self.loading.posts = False
+            self.loading.liking = None
+            self.loading.flagging = None
+            self.loading.deleting = None
 
     def _load_entry_flag_counts(self, session: Session):
         self.entry_flag_counts = {
@@ -206,20 +230,19 @@ class State(UserInfoState):
             ).all():
                 self.user_entry_flags.setdefault(row[0], {})[row[1]] = True
 
-    def on_load(self):
-        self.load_entries()
-
     def delete_entry(self, entry_id: int):
         """Delete an entry from the database."""
         if not self.is_admin:
             return
+        self.loading.deleting = entry_id
+        yield
         with rx.session() as session:
             entry = session.exec(Entry.select().where(Entry.id == entry_id)).first()
             if entry:
                 entry.hidden = True
             session.add(entry)
             session.commit()
-        self.load_entries()
+        return State.load_entries
 
     def _flag_entry(self, entry_id: int, type_: str):
         if not self._is_valid_user():
@@ -229,20 +252,27 @@ class State(UserInfoState):
                 EntryFlags(user_id=self.user_info.id, entry_id=entry_id, type=type_)
             )
             session.commit()
-        self.load_entries()
 
     def like_entry(self, entry_id: int):
         """Like an entry."""
+        self.loading.liking = entry_id
+        yield
         self._flag_entry(entry_id, "like")
+        return State.load_entries
 
     def flag_entry(self, entry_id: int):
         """Flag an entry."""
+        self.loading.flagging = entry_id
+        yield
         self._flag_entry(entry_id, "flag")
+        return State.load_entries
 
     def unlike_entry(self, entry_id: int):
         """Unlike an entry."""
         if not self._is_valid_user():
             return
+        self.loading.liking = entry_id
+        yield
         with rx.session() as session:
             session.exec(
                 delete(EntryFlags).where(
@@ -252,12 +282,14 @@ class State(UserInfoState):
                 )
             )
             session.commit()
-        self.load_entries()
+        return State.load_entries
 
     def unflag_entry(self, entry_id: int):
         """Unflag an entry."""
         if not self._is_valid_user():
             return
+        self.loading.flagging = entry_id
+        yield
         query = delete(EntryFlags).where(
             EntryFlags.entry_id == entry_id,
             EntryFlags.type == "flag",
@@ -268,7 +300,7 @@ class State(UserInfoState):
         with rx.session() as session:
             session.exec(query)
             session.commit()
-        self.load_entries()
+        return State.load_entries
 
     def edit_topic_description(self, description: str):
         """Edit the topic description."""
@@ -278,4 +310,4 @@ class State(UserInfoState):
             self.topic.description = description
             session.add(self.topic)
             session.commit()
-        self.load_entries()
+        return State.load_entries

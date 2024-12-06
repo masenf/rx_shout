@@ -17,7 +17,7 @@ from .state import State
 @rx.page(
     title="rx_shout",
     description="A shoutbox-like app for posting text and images.",
-    on_load=State.on_load,
+    on_load=State.load_entries,
 )
 def index() -> rx.Component:
     return rx.fragment(

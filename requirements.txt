@@ -1,4 +1,5 @@
-reflex==0.6.6.post2
+#reflex==0.6.6.post2
+reflex @ git+https://github.com/reflex-dev/reflex@masenf/db-reuse-engine
 reflex-chakra>=0.6.0
 reflex-google-auth>=0.0.4
 psycopg[binary]
