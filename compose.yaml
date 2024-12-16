@@ -10,8 +10,14 @@ services:
     image: local/reflex-app
     environment:
       - DB_URL=sqlite:///data/reflex.db
+      - ASYNC_DB_URL=sqlite+aiosqlite:///data/reflex.db
       - TELEMETRY_ENABLED
       - GOOGLE_CLIENT_ID
+      - S3_ENDPOINT_URL
+      - S3_ACCESS_KEY_ID
+      - S3_SECRET_ACCESS_KEY
+      - S3_BUCKET_NAME
+      - S3_BUCKET_ACCESS_URL
     build:
       context: .
       dockerfile: prod.Dockerfile

@@ -6,6 +6,9 @@ reflex-google-auth>=0.0.4
 # For postgres access
 psycopg[binary]
 
+# For async sqlite (development)
+aiosqlite
+
 # For async db access with sqlalchemy
 greenlet
 
