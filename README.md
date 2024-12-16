@@ -18,6 +18,16 @@ docker compose up
 
 * Access the app on `https://localhost`
 
+## Uploading Images to S3-compatible Storage (optional)
+
+Set the following environment variables to enable uploading images to S3-compatible storage instead of storing them locally:
+
+* `S3_ENDPOINT_URL`
+* `S3_ACCESS_KEY_ID`
+* `S3_SECRET_ACCESS_KEY`
+* `S3_BUCKET_NAME`
+* `S3_BUCKET_ACCESS_URL` -- url prefix where the bucket files can be accessed.
+
 ### How to Embed
 
 If the app is deployed on `https://rx-shout.mooo.com` and the box is being embedded via
