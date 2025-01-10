@@ -55,4 +55,5 @@ jobs:
           with:
             auth_token: ${{ secrets.REFLEX_AUTH_TOKEN }}
             project_id: ${{ secrets.REFLEX_PROJECT_ID }}
+            extra_args: "--hostname ${{ secrets.REFLEX_HOSTNAME }}"
             python_version: "3.13"
