@@ -13,7 +13,7 @@ concurrency:
     group: main-deploy
 
 jobs:
-    build:
+    deploy-to-vps:
         runs-on: ubuntu-latest
         steps:
         - uses: actions/checkout@v4
@@ -47,3 +47,12 @@ jobs:
         # Clean up unused images, etc on server
         - name: Docker system prune
           run: ssh root@${{ secrets.DOCKER_HOST }} "docker system prune -f"
+    deploy-to-reflex:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Deploy to Reflex Cloud
+          uses: reflex-dev/reflex-deploy-action@v2
+          with:
+            auth_token: ${{ secrets.REFLEX_AUTH_TOKEN }}
+            project_id: ${{ secrets.REFLEX_PROJECT_ID }}
+            python_version: "3.13"
