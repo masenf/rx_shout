@@ -3,8 +3,8 @@
 from typing import Any
 import reflex as rx
 
-from ..state import State, UserInfoState
-from .image_upload import image_upload_component
+from ..state import State, UserInfoState, UPLOAD_ID
+from .image_upload import image_upload_component, UploadProgressState
 
 
 def form_error_callout() -> rx.Component:
@@ -137,7 +137,20 @@ def submission_form() -> rx.Component:
                         color_scheme="gray",
                     ),
                     rx.spacer(),
-                    rx.button("Post", rx.icon("send", size=20), loading=State.loading.posting),
+                    rx.cond(
+                        UploadProgressState.is_uploading,
+                        rx.button(
+                            "Cancel",
+                            on_click=UploadProgressState.cancel_upload(UPLOAD_ID),
+                            type="button",
+                        ),
+                        rx.button(
+                            "Post",
+                            rx.icon("send", size=20),
+                            loading=State.loading.posting,
+                            disabled=UploadProgressState.is_uploading,
+                        ),
+                    ),
                     width="100%",
                 ),
                 gap="1em",

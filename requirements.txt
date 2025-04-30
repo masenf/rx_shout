@@ -1,4 +1,4 @@
-reflex==0.7.9a2
+reflex @ https://github.com/reflex-dev/reflex@main
 
 # For Sign In With Google integration
 reflex-google-auth>=0.0.4

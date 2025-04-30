@@ -14,17 +14,21 @@ MAX_FILE_SIZE = 5 * 1024**2  # 5 MB
 class UploadProgressState(rx.State):
     upload_progress: int
     is_uploading: bool = False
+    is_cancelled: bool = False
 
+    @rx.event
     def on_upload_progress(self, prog: dict):
         """Handle interim progress updates while waiting for upload."""
-        if prog["progress"] < 1:
+        if not self.is_cancelled and prog["progress"] < 1:
             self.is_uploading = True
         else:
             self.is_uploading = False
         self.upload_progress = round(prog["progress"] * 100)
 
+    @rx.event
     def cancel_upload(self, upload_id: str):
         """Cancel the upload before it is complete."""
+        self.is_cancelled = True
         self.is_uploading = False
         return rx.cancel_upload(upload_id)
 
@@ -32,6 +36,7 @@ class UploadProgressState(rx.State):
 class UploadState(State):
     """State for handling file uploads."""
 
+    @rx.event
     async def handle_upload(self, files: list[rx.UploadFile] = []):
         """Write the file bytes to disk and update the filename in base state."""
         if not self._is_valid_user():
@@ -40,15 +45,20 @@ class UploadState(State):
             yield rx.toast("File size too large or invalid format")
             return
         yield rx.clear_selected_files(UPLOAD_ID)
-        for file in files:
-            upload_data = await file.read()
-            filename = f"{uuid.uuid4()}_{file.filename.lstrip('/')}"
-            outfile = Path(rx.get_upload_dir()) / filename
-            outfile.parent.mkdir(parents=True, exist_ok=True)
-            outfile.write_bytes(upload_data)
-            self.image_relative_path = filename
-            break  # only allow one upload
+        try:
+            for file in files:
+                upload_data = await file.read()
+                filename = f"{uuid.uuid4()}_{file.name}"
+                outfile = rx.get_upload_dir() / filename
+                outfile.parent.mkdir(parents=True, exist_ok=True)
+                outfile.write_bytes(upload_data)
+                self.image_relative_path = filename
+                break  # only allow one upload
+        finally:
+            progress_state = await self.get_state(UploadProgressState)
+            progress_state.is_uploading = False
 
+    @rx.event
     def delete_uploaded_image(self):
         """If the user wants to delete the image before making a post."""
         if self.image_relative_path:
@@ -59,21 +69,9 @@ class UploadState(State):
             self.image_relative_path = ""
 
 
-def is_uploading_view() -> rx.Component:
-    """Rendered while upload is in progress."""
-    return rx.hstack(
-        rx.progress(value=UploadProgressState.upload_progress),
-        rx.button(
-            "Cancel",
-            on_click=UploadProgressState.cancel_upload(UPLOAD_ID),
-            type="button",
-        ),
-    )
-
-
 def upload_form() -> rx.Component:
     """The dropzone and button for selecting an image to upload."""
-    return rx.upload(
+    return rx.upload.root(
         rx.vstack(
             rx.button(
                 "Select or Drop Image",
@@ -81,6 +79,9 @@ def upload_form() -> rx.Component:
                 type="button",
             ),
             align="center",
+            border=f"1px dashed {rx.color("gray", 8, alpha=True)}",
+            padding="1em",
+            width="100%",
         ),
         id=UPLOAD_ID,
         multiple=False,
@@ -91,14 +92,28 @@ def upload_form() -> rx.Component:
             "image/webp": [".webp"],
         },
         max_size=MAX_FILE_SIZE,
-        border="1px dotted var(--gray-10)",
-        padding="10px",
-        width="100%",
-        on_drop=UploadState.handle_upload(
-            rx.upload_files(
-                upload_id=UPLOAD_ID,
-                on_upload_progress=UploadProgressState.on_upload_progress,
+        on_drop=[
+            UploadProgressState.set_is_cancelled(False),
+            UploadState.handle_upload(
+                rx.upload_files(
+                    upload_id=UPLOAD_ID,
+                    on_upload_progress=UploadProgressState.on_upload_progress,
+                ),
             ),
+        ],
+        width="100%",
+        drag_active_style=rx.Style(
+            {
+                "&::after": {
+                    "content": "''",
+                    "position": "absolute",
+                    "top": "0",
+                    "left": "0",
+                    "right": "0",
+                    "bottom": "0",
+                    "background": "rgba(0, 0, 0, 0.5)",  # Black with 50% opacity
+                },
+            }
         ),
     )
 
@@ -133,14 +148,11 @@ def uploaded_image_view() -> rx.Component:
 def image_upload_component() -> rx.Component:
     """A component for selecting an image, uploading it, and displaying a preview."""
     return rx.cond(
-        rx.selected_files(UPLOAD_ID),
+        UploadState.image_relative_path,
+        uploaded_image_view(),  # Upload complete
         rx.cond(
             UploadProgressState.is_uploading,
-            is_uploading_view(),
-        ),
-        rx.cond(
-            UploadState.image_relative_path,
-            uploaded_image_view(),  # Upload complete
+            rx.progress(value=UploadProgressState.upload_progress, flex_grow="1"),
             upload_form(),
         ),
     )
