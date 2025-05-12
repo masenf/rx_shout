@@ -1,4 +1,4 @@
-reflex @ git+https://github.com/reflex-dev/reflex@main
+reflex==0.7.11a1
 
 # For Sign In With Google integration
 reflex-google-auth>=0.0.4
