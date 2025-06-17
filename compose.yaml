@@ -9,8 +9,8 @@ services:
   app:
     image: local/reflex-app
     environment:
-      - DB_URL=sqlite:///data/reflex.db
-      - ASYNC_DB_URL=sqlite+aiosqlite:///data/reflex.db
+      - REFLEX_DB_URL=sqlite:///data/reflex.db
+      - REFLEX_ASYNC_DB_URL=sqlite+aiosqlite:///data/reflex.db
       - TELEMETRY_ENABLED
       - GOOGLE_CLIENT_ID
       - S3_ENDPOINT_URL
