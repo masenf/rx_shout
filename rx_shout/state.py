@@ -145,7 +145,7 @@ class State(UserInfoState):
                 await asession.refresh(entry)
             self.image_relative_path = ""
             self.form_error = ""
-            yield [rx.set_value("text", ""), rx.redirect(self.router.page.raw_path)]
+            yield [rx.set_value("text", ""), State.load_entries]
         finally:
             self.loading.posting = False
 
