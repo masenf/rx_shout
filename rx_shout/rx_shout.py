@@ -14,11 +14,6 @@ from .components.form import submission_form
 from .state import State
 
 
-@rx.page(
-    title="rx_shout",
-    description="A shoutbox-like app for posting text and images.",
-    on_load=State.load_entries,
-)
 def index() -> rx.Component:
     return rx.fragment(
         rx.hstack(
@@ -68,4 +63,18 @@ def index() -> rx.Component:
 
 
 app = rx.App()
+app.add_page(
+    index,
+    title=rx.cond(
+        State.topic_name,
+        rx.cond(
+            State.topic_description & State.topic_name != State.topic_description,
+            f"rx_shout | {State.topic_name} - {State.topic_description}",
+            f"rx_shout | {State.topic_name}",
+        ),
+        "rx_shout",
+    ),
+    description="A shoutbox-like app for posting text and images.",
+    on_load=State.load_entries,
+)
 rx.Model.migrate()
