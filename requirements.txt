@@ -1,4 +1,4 @@
-reflex~=0.8.9a
+reflex~=0.8.10a
 
 # For Sign In With Google integration
 reflex-google-auth>=0.0.4
