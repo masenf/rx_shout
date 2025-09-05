@@ -25,10 +25,12 @@ def form_error_callout() -> rx.Component:
 class EditTopicViewState(UserInfoState):
     editor_open: bool = False
 
+    @rx.event
     def set_editor_open(self, value: bool):
         if self.is_admin:
             self.editor_open = value
 
+    @rx.event
     def handle_submit(self, form_dict: dict[str, Any]):
         self.editor_open = False
         if form_dict.get("topic_description"):

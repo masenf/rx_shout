@@ -61,6 +61,7 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
                 user.author
             return user
 
+    @rx.event
     async def set_enabled(self, user_id: int, enable: bool = False):
         """Ban or unban a user."""
         if not self.is_admin:
@@ -103,15 +104,22 @@ class State(UserInfoState):
     image_relative_path: str
     loading: LoadingState = LoadingState()
 
+    @rx.event
+    def set_form_error(self, error: str):
+        self.form_error = error
+
+    @rx.event
     def reload_after_login(self):
         self.reset()
         self._is_valid_user()
         return State.load_entries()
 
+    @rx.event
     def logout_and_reset(self):
         self.logout()
         return self.reload_after_login()
 
+    @rx.event
     async def handle_submit(self, form_data: dict[str, Any]):
         """Handle form submission."""
         form_data.pop(UPLOAD_ID, None)
@@ -145,29 +153,37 @@ class State(UserInfoState):
                 await asession.refresh(entry)
             self.image_relative_path = ""
             self.form_error = ""
-            yield [rx.set_value("text", ""), rx.redirect(self.router.page.raw_path)]
+            yield [rx.set_value("text", ""), rx.redirect(self.router.url)]
         finally:
             self.loading.posting = False
 
+    @rx.var
+    def topic_name(self) -> str:
+        return self.router.url.query_parameters.get("topic", "")
+
+    @rx.var
+    def topic_description(self) -> str:
+        return self.topic.description if self.topic else ""
+
     async def _load_topic(self, asession: AsyncSession) -> Topic | None:
         """Load the topic (if any)."""
-        topic_name = self.router.page.params.get("topic")
-        if not topic_name:
+        if not self.topic_name:
             self.topic = None
             return
         topic = (
-            await asession.exec(Topic.select().where(Topic.name == topic_name))
+            await asession.exec(Topic.select().where(Topic.name == self.topic_name))
         ).one_or_none()
         if topic is None:
             topic = Topic(
-                name=topic_name,
-                description=self.router.page.params.get("description", ""),
+                name=self.topic_name,
+                description=self.router.url.query_parameters.get("description", ""),
             )
             asession.add(topic)
             await asession.commit()
             await asession.refresh(topic)
         return topic
 
+    @rx.event
     async def load_entries(self):
         """Load entries from the database."""
         self.loading.posts = True
@@ -239,6 +255,7 @@ class State(UserInfoState):
             ).all():
                 self.user_entry_flags.setdefault(row[0], {})[row[1]] = True
 
+    @rx.event
     async def delete_entry(self, entry_id: int):
         """Delete an entry from the database."""
         if not self.is_admin:
@@ -264,6 +281,7 @@ class State(UserInfoState):
             )
             await asession.commit()
 
+    @rx.event
     async def like_entry(self, entry_id: int):
         """Like an entry."""
         self.loading.liking = entry_id
@@ -271,6 +289,7 @@ class State(UserInfoState):
         await self._flag_entry(entry_id, "like")
         yield State.load_entries
 
+    @rx.event
     async def flag_entry(self, entry_id: int):
         """Flag an entry."""
         self.loading.flagging = entry_id
@@ -278,6 +297,7 @@ class State(UserInfoState):
         await self._flag_entry(entry_id, "flag")
         yield State.load_entries
 
+    @rx.event
     async def unlike_entry(self, entry_id: int):
         """Unlike an entry."""
         if not self._is_valid_user():
@@ -295,6 +315,7 @@ class State(UserInfoState):
             await asession.commit()
         yield State.load_entries
 
+    @rx.event
     async def unflag_entry(self, entry_id: int):
         """Unflag an entry."""
         if not self._is_valid_user():
@@ -313,6 +334,7 @@ class State(UserInfoState):
             await asession.commit()
         yield State.load_entries
 
+    @rx.event
     async def edit_topic_description(self, description: str):
         """Edit the topic description."""
         if not self.is_admin or self.topic is None:

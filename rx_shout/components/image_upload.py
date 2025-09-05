@@ -17,6 +17,10 @@ class UploadProgressState(rx.State):
     is_cancelled: bool = False
 
     @rx.event
+    def set_is_cancelled(self, value: bool):
+        self.is_cancelled = value
+
+    @rx.event
     def on_upload_progress(self, prog: dict):
         """Handle interim progress updates while waiting for upload."""
         if not self.is_cancelled and prog["progress"] < 1:
