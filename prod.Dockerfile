@@ -2,7 +2,7 @@
 # instance of a Reflex app.
 
 # Stage 1: init
-FROM python:3.13 as init
+FROM python:3.14 as init
 
 ARG uv=/root/.local/bin/uv
 
@@ -35,7 +35,7 @@ RUN rm -rf .web && mkdir -p .web/build
 RUN mv /tmp/client .web/build/client
 
 # Stage 2: copy artifacts into slim image 
-FROM python:3.13-slim
+FROM python:3.14-slim
 WORKDIR /app
 RUN adduser --disabled-password --home /app reflex
 COPY --chown=reflex --from=init /app /app

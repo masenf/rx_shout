@@ -56,4 +56,4 @@ jobs:
             auth_token: ${{ secrets.REFLEX_AUTH_TOKEN }}
             project_id: ${{ secrets.REFLEX_PROJECT_ID }}
             extra_args: --vmtype c1m2
-            python_version: "3.13"
+            python_version: "3.14"
