@@ -1,6 +1,7 @@
 """All state management for the app is defined in this module."""
 
 from __future__ import annotations
+import dataclasses
 import functools
 from typing import Any
 
@@ -18,7 +19,8 @@ from .models import Author, Entry, EntryFlags, Topic, UserInfo
 UPLOAD_ID = "upload_image"
 
 
-class LoadingState(rx.Base):
+@dataclasses.dataclass(kw_only=True, slots=True)
+class LoadingState:
     """Control loading spinners for different controls."""
 
     posts: bool = False
