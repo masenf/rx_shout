@@ -3,12 +3,13 @@
 from typing import List, Optional
 import datetime
 
-from sqlmodel import Field, DateTime, Column, func, Relationship
+from sqlmodel import Field, DateTime, Column, func, Relationship, SQLModel
 
 import reflex as rx
 
 
-class Entry(rx.Model, table=True):
+class Entry(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
     ts: datetime.datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now()),
     )
@@ -34,7 +35,8 @@ class Entry(rx.Model, table=True):
         return d
 
 
-class UserInfo(rx.Model, table=True):
+class UserInfo(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
     ext_id: str = Field(nullable=False, unique=True, index=True)
     email: str = Field(nullable=False)
     enabled: bool = Field(default=True)
@@ -45,7 +47,7 @@ class UserInfo(rx.Model, table=True):
     )
 
 
-class Author(rx.Model, table=True):
+class Author(SQLModel, table=True):
     user_id: int = Field(
         nullable=False,
         foreign_key="userinfo.id",
@@ -62,7 +64,8 @@ class Author(rx.Model, table=True):
     )
 
 
-class EntryFlags(rx.Model, table=True):
+class EntryFlags(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
     user_id: int = Field(nullable=False, foreign_key="userinfo.id", index=True)
     entry_id: int = Field(nullable=False, foreign_key="entry.id", index=True)
     type: str = Field(nullable=False)
@@ -71,7 +74,8 @@ class EntryFlags(rx.Model, table=True):
     entry: Entry = Relationship(back_populates="entry_flags")
 
 
-class Topic(rx.Model, table=True):
+class Topic(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
     name: str = Field(nullable=False, unique=True, index=True)
     description: str = ""
     locked: bool = Field(default=False)
