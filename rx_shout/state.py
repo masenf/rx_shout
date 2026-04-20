@@ -8,7 +8,7 @@ from typing import Any
 import reflex as rx
 import reflex_google_auth
 import sqlalchemy
-from sqlmodel import delete
+from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from . import s3
@@ -39,7 +39,7 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
             return UserInfo(id=-1)
         with rx.session() as session:
             user = session.exec(
-                UserInfo.select()
+                select(UserInfo)
                 .where(UserInfo.ext_id == self.tokeninfo["sub"])
                 .options(sqlalchemy.orm.selectinload(UserInfo.author))
             ).first()
@@ -70,7 +70,7 @@ class UserInfoState(reflex_google_auth.GoogleAuthState):
             return
         async with rx.asession() as asession:
             user = (
-                await asession.exec(UserInfo.select().where(UserInfo.id == user_id))
+                await asession.exec(select(UserInfo).where(UserInfo.id == user_id))
             ).first()
             if user:
                 user.enabled = enable
@@ -173,7 +173,7 @@ class State(UserInfoState):
             self.topic = None
             return
         topic = (
-            await asession.exec(Topic.select().where(Topic.name == self.topic_name))
+            await asession.exec(select(Topic).where(Topic.name == self.topic_name))
         ).one_or_none()
         if topic is None:
             topic = Topic(
@@ -205,7 +205,7 @@ class State(UserInfoState):
                 self.topic = await self._load_topic(asession)
                 self.entries = (
                     await asession.exec(
-                        Entry.select()
+                        select(Entry)
                         .where(
                             Entry.hidden == False,  # noqa: E712
                             Entry.topic_id == (self.topic.id if self.topic else None),
@@ -266,7 +266,7 @@ class State(UserInfoState):
         yield
         async with rx.asession() as asession:
             entry = (
-                await asession.exec(Entry.select().where(Entry.id == entry_id))
+                await asession.exec(select(Entry).where(Entry.id == entry_id))
             ).first()
             if entry:
                 entry.hidden = True
