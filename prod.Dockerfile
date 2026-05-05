@@ -21,7 +21,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN $uv venv
 
 # Install app requirements and reflex inside virtualenv
-RUN $uv pip install -r requirements.txt
+RUN $uv pip install -r requirements.txt --prerelease=allow
 
 # Deploy templates and prepare app
 RUN reflex init
