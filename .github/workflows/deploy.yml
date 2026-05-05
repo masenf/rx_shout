@@ -59,7 +59,7 @@ jobs:
           env:
             PIP_PRE: 1
         - name: Deploy to Reflex Cloud
-          uses: reflex-dev/reflex-deploy-action@v3
+          uses: reflex-dev/reflex-deploy-action@v3.0.0
           with:
             auth_token: ${{ secrets.REFLEX_AUTH_TOKEN }}
             project_id: ${{ secrets.REFLEX_PROJECT_ID }}
