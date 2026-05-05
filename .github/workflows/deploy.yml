@@ -57,3 +57,5 @@ jobs:
             project_id: ${{ secrets.REFLEX_PROJECT_ID }}
             extra_args: --vmtype c1m2
             python_version: "3.14"
+          env:
+            PIP_PRE: 1
