@@ -1,0 +1,15 @@
+[project]
+name = "rx-shout"
+version = "0.1.0"
+description = "A shoutbox-like app for posting of images and text."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "boto3>=1.43.4",
+    "greenlet>=3.5.0",
+    "psycopg[binary]>=3.3.4",
+    "python-dotenv>=1.2.2",
+    "reflex-google-auth>=0.0.4",
+    "reflex[db]~=0.9.2a0",
+]
