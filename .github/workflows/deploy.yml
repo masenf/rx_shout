@@ -51,13 +51,13 @@ jobs:
         runs-on: ubuntu-latest
         steps:
         - uses: actions/checkout@v4
-        - uses: actions/setup-python@v5
+        - uses: astral-sh/setup-uv@v5
           with:
-            python-version: "3.14"
+            enable-cache: true
         - name: Install Reflex
-          run: pip install -r requirements.txt
-          env:
-            PIP_PRE: 1
+          run: |
+            uv sync --frozen --prerelease=allow
+            echo "$PWD/.venv/bin" >> $GITHUB_PATH
         - name: Deploy to Reflex Cloud
           uses: reflex-dev/reflex-deploy-action@v3.0.0
           with:

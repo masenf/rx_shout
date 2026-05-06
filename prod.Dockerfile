@@ -18,10 +18,9 @@ RUN mkdir -p /app/data /app/uploaded_files
 # Create virtualenv which will be copied into final container
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN $uv venv
 
 # Install app requirements and reflex inside virtualenv
-RUN $uv pip install -r requirements.txt --prerelease=allow
+RUN $uv sync --frozen --no-dev --prerelease=allow
 
 # Deploy templates and prepare app
 RUN reflex init
