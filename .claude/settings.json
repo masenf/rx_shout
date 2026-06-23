@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "reflex@reflex-agent-skills": true
+  }
+}

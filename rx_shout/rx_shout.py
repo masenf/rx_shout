@@ -4,7 +4,6 @@ import importlib.metadata
 import sys
 import reflex as rx
 import reflex_enterprise as rxe
-import reflex_google_auth
 
 from .components.entry import entry_view
 from .components.google_auth import (
@@ -12,7 +11,7 @@ from .components.google_auth import (
     google_auth_button,
 )
 from .components.form import submission_form
-from .state import State
+from .state import PostFormState, TopicState, UserState
 
 
 def index() -> rx.Component:
@@ -28,8 +27,7 @@ def index() -> rx.Component:
             rx.vstack(
                 rx.card(
                     rx.cond(
-                        reflex_google_auth.GoogleAuthState.token_is_valid
-                        & State.user_info.enabled,
+                        UserState.user_info.enabled,
                         submission_form(),
                         rx.flex(
                             auth_error_callout(),
@@ -37,14 +35,14 @@ def index() -> rx.Component:
                             google_auth_button(),
                             justify="end",
                             width="100%",
-                            on_click=State.set_form_error(""),
+                            on_click=PostFormState.set_form_error(""),
                         ),
                     ),
                     width="100%",
                 ),
                 rx.vstack(
                     rx.foreach(
-                        State.entries,
+                        TopicState.entries,
                         entry_view,
                     ),
                     gap="2em",
@@ -67,16 +65,17 @@ app = rxe.App()
 app.add_page(
     index,
     title=rx.cond(
-        State.topic_name,
+        TopicState.topic_name,
         rx.cond(
-            State.topic_description & State.topic_name != State.topic_description,
-            f"rx_shout | {State.topic_name} - {State.topic_description}",
-            f"rx_shout | {State.topic_name}",
+            TopicState.topic_description & TopicState.topic_name
+            != TopicState.topic_description,
+            f"rx_shout | {TopicState.topic_name} - {TopicState.topic_description}",
+            f"rx_shout | {TopicState.topic_name}",
         ),
         "rx_shout",
     ),
     description="A shoutbox-like app for posting text and images.",
-    on_load=State.load_entries,
+    on_load=TopicState.load_entries,
     auth=False,
 )
 rx.Model.migrate()

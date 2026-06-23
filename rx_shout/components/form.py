@@ -3,17 +3,17 @@
 from typing import Any
 import reflex as rx
 
-from ..state import State, UserInfoState, UPLOAD_ID
+from ..state import LoadingState, PostFormState, TopicState, UserState, UPLOAD_ID
 from .image_upload import image_upload_component, UploadProgressState
 
 
 def form_error_callout() -> rx.Component:
     """Rendered when there is a form validation error."""
     return rx.cond(
-        State.form_error,
+        PostFormState.form_error,
         rx.callout.root(
             rx.callout.icon(rx.icon("triangle_alert", size=20)),
-            rx.callout.text(State.form_error),
+            rx.callout.text(PostFormState.form_error),
             size="1",
             color_scheme="red",
             variant="soft",
@@ -22,7 +22,7 @@ def form_error_callout() -> rx.Component:
     )
 
 
-class EditTopicViewState(UserInfoState):
+class EditTopicViewState(UserState):
     editor_open: bool = False
 
     @rx.event
@@ -34,7 +34,7 @@ class EditTopicViewState(UserInfoState):
     def handle_submit(self, form_dict: dict[str, Any]):
         self.editor_open = False
         if form_dict.get("topic_description"):
-            return State.edit_topic_description(form_dict["topic_description"])
+            return TopicState.edit_topic_description(form_dict["topic_description"])
 
 
 def edit_topic_view() -> rx.Component:
@@ -43,7 +43,7 @@ def edit_topic_view() -> rx.Component:
             rx.input(
                 rx.input.slot(rx.icon("pencil", size=20)),
                 placeholder="Edit topic description...",
-                default_value=State.topic.description,
+                default_value=TopicState.topic.description,
                 id="topic_description",
                 width="100%",
             ),
@@ -63,18 +63,18 @@ def edit_topic_view() -> rx.Component:
 def topic_description() -> rx.Component:
     return rx.heading(
         rx.cond(
-            State.topic,
+            TopicState.topic,
             rx.cond(
-                State.topic.description,
-                State.topic.description,
-                State.topic.name,
+                TopicState.topic.description,
+                TopicState.topic.description,
+                TopicState.topic.name,
             ),
             "Shout Your Thoughts Into the Void",
         ),
         size="4",
         on_click=EditTopicViewState.set_editor_open(True),
         cursor=rx.cond(
-            UserInfoState.is_admin,
+            UserState.is_admin,
             "pointer",
             "default",
         ),
@@ -104,19 +104,19 @@ def submission_form() -> rx.Component:
                 rx.hstack(
                     rx.input(
                         rx.input.slot(rx.icon("user", size=20)),
-                        value=UserInfoState.user_info.author.name,
+                        value=UserState.user_info.author.name,
                         read_only=True,
                         width="100%",
                     ),
                     rx.input(
                         rx.input.slot(rx.icon("at_sign", size=20)),
-                        value=UserInfoState.user_info.email,
+                        value=UserState.user_info.email,
                         read_only=True,
                         width="100%",
                     ),
                     rx.icon_button(
                         rx.icon("log-out", size=20),
-                        on_click=State.logout_and_reset,
+                        on_click=rx.redirect("/logout"),
                         color_scheme="gray",
                         type="button",
                     ),
@@ -133,8 +133,8 @@ def submission_form() -> rx.Component:
                     rx.button(
                         "Reload",
                         rx.icon("refresh-cw", size=20),
-                        loading=State.loading.posts,
-                        on_click=State.load_entries,
+                        loading=LoadingState.posts,
+                        on_click=TopicState.load_entries,
                         type="button",
                         color_scheme="gray",
                     ),
@@ -149,7 +149,7 @@ def submission_form() -> rx.Component:
                         rx.button(
                             "Post",
                             rx.icon("send", size=20),
-                            loading=State.loading.posting,
+                            loading=LoadingState.posting,
                             disabled=UploadProgressState.is_uploading,
                         ),
                     ),
@@ -157,7 +157,7 @@ def submission_form() -> rx.Component:
                 ),
                 gap="1em",
             ),
-            on_submit=State.handle_submit,
+            on_submit=PostFormState.handle_submit,
             width="100%",
         ),
     )

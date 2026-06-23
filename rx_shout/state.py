@@ -48,8 +48,11 @@ async def require_admin_var(field_or_var: Any, auth_user_state: rxe.auth.AuthUse
 class UserState(rxe.auth.AuthUserState):
     auth_error: str = ""
 
-    @rx.var(initial_value=UserInfo(id=-1, ext_id="", email="", enabled=False))
+    @rxe.var(auth=False)
     def user_info(self) -> UserInfo:
+        print(f"UserState.user_info called with sub={self.sub}, email={self.email}")
+        if not self.sub:
+            return UserInfo(id=-1, ext_id="", email="", enabled=False)
         with rx.session() as session:
             user = session.exec(
                 select(UserInfo)
@@ -107,14 +110,6 @@ class UserState(rxe.auth.AuthUserState):
 
     def _is_valid_user(self):
         return self.sub and self.user_info.id > 0 and self.user_info.enabled
-
-    @rx.event
-    async def reload_after_login(self):
-        topic_state = await self.get_state(TopicState)
-        topic_state.reset()
-        user_flag_state = await self.get_state(UserFlagState)
-        user_flag_state.reset()
-        return TopicState.load_entries()
 
 
 class TopicState(rx.State):
@@ -180,9 +175,11 @@ class TopicState(rx.State):
                     )
                 ).all()
                 self.entry_like_counts = await self._load_entry_like_counts(asession)
+                user_flag_state = await self.get_state(UserFlagState)
                 if user_state._is_valid_user():
-                    user_flag_state = await self.get_state(UserFlagState)
                     await user_flag_state._load_user_flags(asession, user_state)
+                else:
+                    user_flag_state.reset()
         finally:
             loading_state.posts = False
             loading_state.liking = None

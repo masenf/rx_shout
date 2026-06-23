@@ -3,19 +3,25 @@
 import reflex as rx
 
 from ..models import Author, Entry
-from ..state import State
+from ..state import (
+    EntryActionState,
+    LoadingState,
+    TopicState,
+    UserFlagState,
+    UserState,
+)
 
 
 def ban_button(author: Author) -> rx.Component:
     """The button to ban a user."""
     return rx.cond(
-        State.is_admin,
+        UserState.is_admin,
         rx.cond(
             author.user_info.enabled,
             rx.tooltip(
                 rx.icon_button(
                     rx.icon("user"),
-                    on_click=State.set_enabled(author.user_id, False),
+                    on_click=UserState.set_enabled(author.user_id, False),
                     color_scheme="green",
                     size="1",
                 ),
@@ -24,7 +30,7 @@ def ban_button(author: Author) -> rx.Component:
             rx.tooltip(
                 rx.icon_button(
                     rx.icon("user_x"),
-                    on_click=State.set_enabled(author.user_id, True),
+                    on_click=UserState.set_enabled(author.user_id, True),
                     color_scheme="red",
                     size="1",
                 ),
@@ -72,13 +78,13 @@ def entry_content(e: Entry) -> rx.Component:
 
 def like_badge(e: Entry) -> rx.Component:
     """The badge for the like count."""
-    entry_flags = State.entry_flag_counts[e.id.to(str)]
-    user_flags = State.user_entry_flags[e.id.to(str)]
+    like_counts = TopicState.entry_like_counts[e.id.to(str)]
+    user_flags = UserFlagState.user_entry_flags[e.id.to(str)]
     children = [
         rx.icon("heart"),
         rx.cond(
-            entry_flags & entry_flags["like"],
-            rx.text(entry_flags["like"]),
+            like_counts & like_counts["like"],
+            rx.text(like_counts["like"]),
         ),
     ]
     return rx.cond(
@@ -87,8 +93,8 @@ def like_badge(e: Entry) -> rx.Component:
             rx.button(
                 *children,
                 color_scheme="red",
-                on_click=State.unlike_entry(e.id),
-                loading=State.loading.liking == e.id,
+                on_click=EntryActionState.unlike_entry(e.id),
+                loading=LoadingState.liking == e.id,
             ),
             content="Unlike",
         ),
@@ -96,8 +102,8 @@ def like_badge(e: Entry) -> rx.Component:
             rx.button(
                 *children,
                 color_scheme="gray",
-                on_click=State.like_entry(e.id),
-                loading=State.loading.liking == e.id,
+                on_click=EntryActionState.like_entry(e.id),
+                loading=LoadingState.liking == e.id,
             ),
             content="Like",
         ),
@@ -106,10 +112,10 @@ def like_badge(e: Entry) -> rx.Component:
 
 def flag_badge(e: Entry) -> rx.Component:
     """The badge for the flag count."""
-    entry_flags = State.entry_flag_counts[e.id.to(str)]
-    user_flags = State.user_entry_flags[e.id.to(str)]
+    entry_flags = UserFlagState.entry_flag_counts[e.id.to(str)]
+    user_flags = UserFlagState.user_entry_flags[e.id.to(str)]
     flag_count = rx.cond(
-        State.is_admin & entry_flags & entry_flags["flag"],
+        UserState.is_admin & entry_flags & entry_flags["flag"],
         rx.text(entry_flags["flag"]),
     )
     return rx.cond(
@@ -119,8 +125,8 @@ def flag_badge(e: Entry) -> rx.Component:
                 rx.icon("flag", color="red"),
                 flag_count,
                 color_scheme="orange",
-                on_click=State.unflag_entry(e.id),
-                loading=State.loading.flagging == e.id,
+                on_click=EntryActionState.unflag_entry(e.id),
+                loading=LoadingState.flagging == e.id,
             ),
             content="Unflag Post",
         ),
@@ -131,7 +137,7 @@ def flag_badge(e: Entry) -> rx.Component:
                         rx.icon("flag"),
                         flag_count,
                         color_scheme="gray",
-                        loading=State.loading.flagging == e.id,
+                        loading=LoadingState.flagging == e.id,
                     ),
                 ),
                 content="Flag for Moderation",
@@ -142,10 +148,10 @@ def flag_badge(e: Entry) -> rx.Component:
                         rx.icon("flag"),
                         "Flag Post",
                         rx.icon("triangle_alert"),
-                        on_click=State.flag_entry(e.id),
+                        on_click=EntryActionState.flag_entry(e.id),
                         width="100%",
                         color_scheme="orange",
-                        loading=State.loading.flagging == e.id,
+                        loading=LoadingState.flagging == e.id,
                     ),
                 ),
                 align="center",
@@ -158,13 +164,13 @@ def flag_badge(e: Entry) -> rx.Component:
 def trash_badge(e: Entry) -> rx.Component:
     """The badge for the delete button."""
     return rx.cond(
-        State.is_admin,
+        UserState.is_admin,
         rx.tooltip(
             rx.icon_button(
                 rx.icon("trash"),
-                on_click=State.delete_entry(e.id),
+                on_click=EntryActionState.delete_entry(e.id),
                 color_scheme="red",
-                loading=State.loading.deleting == e.id,
+                loading=LoadingState.deleting == e.id,
             ),
             content="Delete Post",
         ),
