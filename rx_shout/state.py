@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import functools
+from pathlib import Path
 from typing import Any
 
 import reflex as rx
@@ -316,6 +317,16 @@ class PostFormState(rx.State):
             yield [rx.set_value("text", ""), rx.redirect(self.router.url)]
         finally:
             loading.posting = False
+
+    @rx.event
+    async def delete_uploaded_image(self):
+        """If the user wants to delete the image before making a post."""
+        if self.image_relative_path:
+            try:
+                (rx.get_upload_dir() / self.image_relative_path).unlink()
+            except FileNotFoundError:
+                pass
+            self.image_relative_path = ""
 
 class EntryActionState(rx.State):
     @rxe.event(auth=require_admin)

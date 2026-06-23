@@ -1,11 +1,10 @@
 """Frontend components for handling image upload."""
 
 import uuid
-from pathlib import Path
 
 import reflex as rx
 
-from ..state import State, UPLOAD_ID
+from ..state import UPLOAD_ID, PostFormState, UserState
 
 
 MAX_FILE_SIZE = 5 * 1024**2  # 5 MB
@@ -37,13 +36,14 @@ class UploadProgressState(rx.State):
         return rx.cancel_upload(upload_id)
 
 
-class UploadState(State):
+class UploadState(rx.State):
     """State for handling file uploads."""
 
     @rx.event
     async def handle_upload(self, files: list[rx.UploadFile] = []):
         """Write the file bytes to disk and update the filename in base state."""
-        if not self._is_valid_user():
+        user_state = await self.get_state(UserState)
+        if not user_state._is_valid_user():
             return
         if not files:
             yield rx.toast("File size too large or invalid format")
@@ -52,25 +52,16 @@ class UploadState(State):
         try:
             for file in files:
                 upload_data = await file.read()
-                filename = f"{uuid.uuid4()}_{file.name}"
+                filename = f"{uuid.uuid4()}.png"
                 outfile = rx.get_upload_dir() / filename
                 outfile.parent.mkdir(parents=True, exist_ok=True)
                 outfile.write_bytes(upload_data)
-                self.image_relative_path = filename
+                post_form_state = await self.get_state(PostFormState)
+                post_form_state.image_relative_path = filename
                 break  # only allow one upload
         finally:
             progress_state = await self.get_state(UploadProgressState)
             progress_state.is_uploading = False
-
-    @rx.event
-    def delete_uploaded_image(self):
-        """If the user wants to delete the image before making a post."""
-        if self.image_relative_path:
-            try:
-                (Path(rx.get_upload_dir()) / self.image_relative_path).unlink()
-            except FileNotFoundError:
-                pass
-            self.image_relative_path = ""
 
 
 def upload_form() -> rx.Component:
@@ -128,7 +119,7 @@ def uploaded_image_view() -> rx.Component:
         rx.icon(
             "circle_x",
             size=25,
-            on_click=UploadState.delete_uploaded_image,
+            on_click=PostFormState.delete_uploaded_image,
             color="var(--gray-10)",
             cursor="pointer",
             position="absolute",
@@ -141,7 +132,7 @@ def uploaded_image_view() -> rx.Component:
             box_shadow="rgba(0, 0, 0, 0.3) 1px 3px 5px",
         ),
         rx.image(
-            src=rx.get_upload_url(UploadState.image_relative_path),
+            src=rx.get_upload_url(PostFormState.image_relative_path),
             height="15em",
         ),
         # ensure circle_x is positioned relative to the box
@@ -152,7 +143,7 @@ def uploaded_image_view() -> rx.Component:
 def image_upload_component() -> rx.Component:
     """A component for selecting an image, uploading it, and displaying a preview."""
     return rx.cond(
-        UploadState.image_relative_path,
+        PostFormState.image_relative_path,
         uploaded_image_view(),  # Upload complete
         rx.cond(
             UploadProgressState.is_uploading,
