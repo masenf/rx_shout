@@ -78,4 +78,14 @@ app.add_page(
     on_load=TopicState.load_entries,
     auth=False,
 )
+
+# In dev mode, run a mock OIDC provider so developers can log in as any user.
+# Imported lazily so the MockAuthState provider is never defined in production.
+from reflex.utils.exec import is_prod_mode  # noqa: E402
+
+if not is_prod_mode():
+    from .mock_auth import register_mock_auth
+
+    register_mock_auth(app)
+
 rx.Model.migrate()

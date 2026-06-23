@@ -225,7 +225,7 @@ class UserFlagState(rx.State):
             self.user_entry_flags = {}
             return
         self.user_entry_flags = await self._load_user_entry_flags(asession, user_state.user_info.id)
-        if user_state.is_admin:
+        if not user_state.is_admin:
             self.entry_flag_counts = {}
             return
         self.entry_flag_counts = await self._load_entry_flag_counts(asession)
@@ -240,7 +240,7 @@ class UserFlagState(rx.State):
                     sqlalchemy.text(
                         "SELECT "
                         "entry_id, "
-                        "COUNT(CASE type WHEN 'flag' THEN 1 ELSE NULL END) as flags, "
+                        "COUNT(CASE type WHEN 'flag' THEN 1 ELSE NULL END) as flags "
                         "FROM entryflags "
                         "GROUP BY entry_id"
                     ),
