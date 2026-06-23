@@ -3,6 +3,7 @@
 import importlib.metadata
 import sys
 import reflex as rx
+import reflex_enterprise as rxe
 import reflex_google_auth
 
 from .components.entry import entry_view
@@ -62,7 +63,7 @@ def index() -> rx.Component:
     )
 
 
-app = rx.App()
+app = rxe.App()
 app.add_page(
     index,
     title=rx.cond(
@@ -76,5 +77,6 @@ app.add_page(
     ),
     description="A shoutbox-like app for posting text and images.",
     on_load=State.load_entries,
+    auth=False,
 )
 rx.Model.migrate()
