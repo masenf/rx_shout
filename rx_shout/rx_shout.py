@@ -6,12 +6,24 @@ import reflex as rx
 import reflex_enterprise as rxe
 
 from .components.entry import entry_view
-from .components.google_auth import (
-    auth_error_callout,
-    google_auth_button,
-)
 from .components.form import submission_form
 from .state import PostFormState, TopicState, UserState
+    
+
+def login_button() -> rx.Component:
+    return rx.box(
+        rx.button(
+            rx.icon("log-in", size=20),
+            "Sign in",
+            on_click=rx.redirect("/login"),
+            width="100%",
+        ),
+        box_shadow="rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",  # noqa
+        opacity="0.7",
+        overflow="hidden",
+        border_radius="10px",
+        width="200px",
+    )
 
 
 def index() -> rx.Component:
@@ -30,9 +42,9 @@ def index() -> rx.Component:
                         UserState.user_info.enabled,
                         submission_form(),
                         rx.flex(
-                            auth_error_callout(),
+                            UserState.auth_error_callout(),
                             rx.spacer(),
-                            google_auth_button(),
+                            login_button(),
                             justify="end",
                             width="100%",
                             on_click=PostFormState.set_form_error(""),
@@ -84,7 +96,7 @@ app.add_page(
 from reflex.utils.exec import is_prod_mode  # noqa: E402
 
 if not is_prod_mode():
-    from .mock_auth import register_mock_auth
+    from .auth.mock import register_mock_auth
 
     register_mock_auth(app)
 

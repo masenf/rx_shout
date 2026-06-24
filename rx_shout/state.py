@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 import functools
-from pathlib import Path
 from typing import Any
 
 import reflex as rx
@@ -12,6 +11,7 @@ from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from . import s3
+from .auth.authz import require_admin
 from .models import Author, Entry, EntryFlags, Topic, UserInfo
 
 
@@ -29,28 +29,11 @@ class LoadingState(rx.State):
     deleting: rx.Field[int | None] = rx.field(None)
 
 
-async def _require_admin(auth_user_state: rxe.auth.AuthUserState) -> bool:
-    """Require the user to be an admin to run the handler/var."""
-    user_state = await auth_user_state.get_state(UserState)
-    return user_state.is_admin
-
-
-async def require_admin(handler: rx.EventHandler, payload: dict[str, Any], auth_user_state: rxe.auth.AuthUserState) -> bool:
-    """Require the user to be an admin to run the handler."""
-    return await _require_admin(auth_user_state)
-
-
-async def require_admin_var(field_or_var: Any, auth_user_state: rxe.auth.AuthUserState) -> bool:
-    """Require the user to be an admin to access the field/var."""
-    return await _require_admin(auth_user_state)
-
-
 class UserState(rxe.auth.AuthUserState):
     auth_error: str = ""
 
     @rxe.var(auth=False)
     def user_info(self) -> UserInfo:
-        print(f"UserState.user_info called with sub={self.sub}, email={self.email}")
         if not self.sub:
             return UserInfo(id=-1, ext_id="", email="", enabled=False)
         with rx.session() as session:
@@ -108,8 +91,22 @@ class UserState(rxe.auth.AuthUserState):
             self.auth_error = "Sign in to post."
         return False
 
-    def _is_valid_user(self):
-        return self.sub and self.user_info.id > 0 and self.user_info.enabled
+    def _is_valid_user(self) -> bool:
+        return bool(self.sub and self.user_info.id > 0 and self.user_info.enabled)
+
+    @classmethod
+    def auth_error_callout(cls) -> rx.Component:
+        """Rendered when there is a user auth error."""
+        return rx.cond(
+            cls.auth_error,
+            rx.callout.root(
+                rx.callout.icon(rx.icon("triangle_alert", size=20)),
+                rx.callout.text(cls.auth_error),
+                size="1",
+                color_scheme="red",
+                variant="soft",
+            ),
+        )
 
 
 class TopicState(rx.State):
@@ -218,7 +215,7 @@ class TopicState(rx.State):
 
 class UserFlagState(rx.State):
     user_entry_flags: rx.Field[dict[int, dict[str, bool]]]
-    entry_flag_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(auth=require_admin_var)
+    entry_flag_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(auth=require_admin)
 
     async def _load_user_flags(self, asession: AsyncSession, user_state: UserState):
         if not user_state._is_valid_user():
@@ -279,8 +276,6 @@ class PostFormState(rx.State):
         """Handle form submission."""
         form_data.pop(UPLOAD_ID, None)
         user_state = await self.get_state(UserState)
-        if not user_state._is_valid_user():
-            return
         if not form_data.get("text") and not self.image_relative_path:
             self.form_error = "You have to at least write something or upload an image."
             return
@@ -344,8 +339,6 @@ class EntryActionState(rx.State):
 
     async def _flag_entry(self, entry_id: int, type_: str):
         user_state = await self.get_state(UserState)
-        if not user_state._is_valid_user():
-            return
         async with rx.asession() as asession:
             asession.add(
                 EntryFlags(user_id=user_state.user_info.id, entry_id=entry_id, type=type_)
@@ -395,8 +388,6 @@ class EntryActionState(rx.State):
         """Unflag an entry."""
 
         user_state = await self.get_state(UserState)
-        if not user_state._is_valid_user():
-            return
         loading_state = await self.get_state(LoadingState)
         loading_state.flagging = entry_id
         yield
