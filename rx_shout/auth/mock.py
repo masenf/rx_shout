@@ -84,9 +84,7 @@ async def _mock_oidc_lifespan() -> AsyncIterator[None]:
     """Run the mock OIDC provider on a background thread for the app's lifetime."""
     from oidc_provider_mock import run_server_in_thread
 
-    with run_server_in_thread(
-        port=MOCK_OIDC_PORT, user_claims=_seed_users()
-    ) as server:
+    with run_server_in_thread(port=MOCK_OIDC_PORT, user_claims=_seed_users()) as server:
         print(  # noqa: T201 - surfaced in the dev server log
             f"Mock OIDC provider running at http://localhost:{server.server_port}"
         )

@@ -1,0 +1,30 @@
+fail_fast: true
+
+# Hooks run tools from the project's environment (`language: system`), so run
+# pre-commit through uv, e.g. `uv run pre-commit install` and
+# `uv run pre-commit run --all-files`. Tools are pinned in the `dev`
+# dependency group in pyproject.toml.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff-format
+        language: system
+        entry: ruff format
+        require_serial: true
+        types_or: [python, pyi]
+
+      - id: ruff-check
+        name: ruff-check
+        language: system
+        entry: ruff check
+        require_serial: true
+        args: ["--fix", "--exit-non-zero-on-fix"]
+        types_or: [python, pyi]
+
+      - id: codespell
+        name: codespell
+        language: system
+        entry: codespell
+        require_serial: true
+        types_or: [python, pyi, markdown, text]

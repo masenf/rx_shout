@@ -1,6 +1,7 @@
 """All state management for the app is defined in this module."""
 
 from __future__ import annotations
+
 import functools
 from typing import Any
 
@@ -13,7 +14,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from . import s3
 from .auth.authz import require_admin
 from .models import Author, Entry, EntryFlags, Topic, UserInfo
-
 
 # The ID the will be used by the upload component.
 UPLOAD_ID = "upload_image"
@@ -80,7 +80,7 @@ class UserState(rxe.auth.AuthUserState):
         if self._is_valid_user() and self.user_info.id == 1:
             return True
         return False
-    
+
     def _check_valid_user(self):
         if self._is_valid_user():
             self.auth_error = ""
@@ -183,7 +183,9 @@ class TopicState(rx.State):
             loading_state.flagging = None
             loading_state.deleting = None
 
-    async def _load_entry_like_counts(self, asession: AsyncSession) -> dict[int, dict[str, int]]:
+    async def _load_entry_like_counts(
+        self, asession: AsyncSession
+    ) -> dict[int, dict[str, int]]:
         return {
             row[0]: {
                 "like": row[1],
@@ -215,19 +217,25 @@ class TopicState(rx.State):
 
 class UserFlagState(rx.State):
     user_entry_flags: rx.Field[dict[int, dict[str, bool]]]
-    entry_flag_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(auth=require_admin)
+    entry_flag_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(
+        auth=require_admin
+    )
 
     async def _load_user_flags(self, asession: AsyncSession, user_state: UserState):
         if not user_state._is_valid_user():
             self.user_entry_flags = {}
             return
-        self.user_entry_flags = await self._load_user_entry_flags(asession, user_state.user_info.id)
+        self.user_entry_flags = await self._load_user_entry_flags(
+            asession, user_state.user_info.id
+        )
         if not user_state.is_admin:
             self.entry_flag_counts = {}
             return
         self.entry_flag_counts = await self._load_entry_flag_counts(asession)
 
-    async def _load_entry_flag_counts(self, asession: AsyncSession) -> dict[int, dict[str, int]]:
+    async def _load_entry_flag_counts(
+        self, asession: AsyncSession
+    ) -> dict[int, dict[str, int]]:
         return {
             row[0]: {
                 "flag": row[1],
@@ -245,14 +253,14 @@ class UserFlagState(rx.State):
             ).all()
         }
 
-    async def _load_user_entry_flags(self, asession: AsyncSession, user_id: int) -> dict[int, dict[str, bool]]:
+    async def _load_user_entry_flags(
+        self, asession: AsyncSession, user_id: int
+    ) -> dict[int, dict[str, bool]]:
         user_entry_flags = {}
         for row in (
             await asession.execute(
                 sqlalchemy.text(
-                    "SELECT entry_id, type "
-                    "FROM entryflags "
-                    "WHERE user_id = :user_id"
+                    "SELECT entry_id, type FROM entryflags WHERE user_id = :user_id"
                 ),
                 {"user_id": user_id},
             )
@@ -320,6 +328,7 @@ class PostFormState(rx.State):
                 pass
             self.image_relative_path = ""
 
+
 class EntryActionState(rx.State):
     @rxe.event(auth=require_admin)
     async def delete_entry(self, entry_id: int):
@@ -341,7 +350,9 @@ class EntryActionState(rx.State):
         user_state = await self.get_state(UserState)
         async with rx.asession() as asession:
             asession.add(
-                EntryFlags(user_id=user_state.user_info.id, entry_id=entry_id, type=type_)
+                EntryFlags(
+                    user_id=user_state.user_info.id, entry_id=entry_id, type=type_
+                )
             )
             await asession.commit()
 
@@ -386,7 +397,6 @@ class EntryActionState(rx.State):
     @rx.event
     async def unflag_entry(self, entry_id: int):
         """Unflag an entry."""
-
         user_state = await self.get_state(UserState)
         loading_state = await self.get_state(LoadingState)
         loading_state.flagging = entry_id

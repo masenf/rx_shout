@@ -17,5 +17,65 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "codespell>=2.4.2",
     "oidc-provider-mock>=0.4.5",
+    "pre-commit>=4.6.0",
+    "pyright>=1.1.410",
+    "ruff>=0.15.19",
 ]
+
+[tool.ruff]
+target-version = "py314"
+output-format = "concise"
+lint.isort.split-on-trailing-comma = false
+lint.select = [
+    "ANN001",
+    "B",
+    "C4",
+    "D",
+    "E",
+    "ERA",
+    "F",
+    "FURB",
+    "I",
+    "N",
+    "PERF",
+    "PGH",
+    "PTH",
+    "RUF",
+    "SIM",
+    "T",
+    "TRY",
+    "W",
+]
+lint.ignore = [
+    "B008",
+    "D205",
+    "E501",
+    "F403",
+    "SIM115",
+    "RUF006",
+    "RUF008",
+    "RUF012",
+    "TRY0",
+]
+lint.pydocstyle.convention = "google"
+lint.allowed-confusables = ['’']
+
+[tool.ruff.lint.per-file-ignores]
+"**/alembic/*.py" = ["D", "ERA"]
+"__init__.py" = ["ERA"]
+"rxconfig.py" = ["D"]
+
+[tool.pyright]
+reportIncompatibleMethodOverride = false
+reportMissingImports = false
+reportInconsistentOverload = false
+reportIncompatibleVariableOverride = "warning"
+exclude = [
+    "**/alembic/*",
+    ".web/*",
+]
+
+[tool.codespell]
+skip = "*.lock,*.db,./.web,./assets"

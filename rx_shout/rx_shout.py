@@ -2,13 +2,14 @@
 
 import importlib.metadata
 import sys
+
 import reflex as rx
 import reflex_enterprise as rxe
 
 from .components.entry import entry_view
 from .components.form import submission_form
 from .state import PostFormState, TopicState, UserState
-    
+
 
 def login_button() -> rx.Component:
     return rx.box(
@@ -18,7 +19,7 @@ def login_button() -> rx.Component:
             on_click=rx.redirect("/login"),
             width="100%",
         ),
-        box_shadow="rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",  # noqa
+        box_shadow="rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
         opacity="0.7",
         overflow="hidden",
         border_radius="10px",

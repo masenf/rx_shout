@@ -1,11 +1,9 @@
 """Database models used by the app are defined in this module."""
 
-from typing import List, Optional
 import datetime
+from typing import List, Optional
 
-from sqlmodel import Field, DateTime, Column, func, Relationship, SQLModel
-
-import reflex as rx
+from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
 
 
 class Entry(SQLModel, table=True):

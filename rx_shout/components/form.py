@@ -1,10 +1,11 @@
 """The form for submitting new entries."""
 
 from typing import Any
+
 import reflex as rx
 
-from ..state import LoadingState, PostFormState, TopicState, UserState, UPLOAD_ID
-from .image_upload import image_upload_component, UploadProgressState
+from ..state import UPLOAD_ID, LoadingState, PostFormState, TopicState, UserState
+from .image_upload import UploadProgressState, image_upload_component
 
 
 def form_error_callout() -> rx.Component:

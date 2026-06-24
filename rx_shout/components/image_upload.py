@@ -6,7 +6,6 @@ import reflex as rx
 
 from ..state import UPLOAD_ID, PostFormState, UserState
 
-
 MAX_FILE_SIZE = 5 * 1024**2  # 5 MB
 
 
@@ -74,7 +73,7 @@ def upload_form() -> rx.Component:
                 type="button",
             ),
             align="center",
-            border=f"1px dashed {rx.color("gray", 8, alpha=True)}",
+            border=f"1px dashed {rx.color('gray', 8, alpha=True)}",
             padding="1em",
             width="100%",
         ),

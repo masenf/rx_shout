@@ -16,9 +16,6 @@ config = rxe.Config(
     db_url="sqlite:///reflex.db",
     plugins=[
         rx.plugins.SitemapPlugin(),
-        rxe.auth.AuthPlugin(
-            auth=require_valid_user,
-            auth_providers=auth_providers
-        ),
+        rxe.auth.AuthPlugin(auth=require_valid_user, auth_providers=auth_providers),
     ],
 )

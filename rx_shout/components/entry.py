@@ -3,13 +3,7 @@
 import reflex as rx
 
 from ..models import Author, Entry
-from ..state import (
-    EntryActionState,
-    LoadingState,
-    TopicState,
-    UserFlagState,
-    UserState,
-)
+from ..state import EntryActionState, LoadingState, TopicState, UserFlagState, UserState
 
 
 def ban_button(author: Author) -> rx.Component:
