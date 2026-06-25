@@ -2,6 +2,9 @@ version = 1
 revision = 3
 requires-python = ">=3.14"
 
+[options]
+prerelease-mode = "allow"
+
 [[package]]
 name = "aiosqlite"
 version = "0.22.1"
@@ -685,7 +688,7 @@ wheels = [
 
 [[package]]
 name = "reflex"
-version = "0.9.4"
+version = "0.9.6a1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -715,9 +718,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/e8/57e45c858883a2a2be07bb7f211c0a6f3635bb1fad3b05a063e4e50f948a/reflex-0.9.4.tar.gz", hash = "sha256:b76fd6a57aa0828c6ed352bc0dda825e30e8708f490127ff5ad83d60d5208360", size = 383584, upload-time = "2026-06-04T01:44:22.468Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/8f/aef70713b7ba89a4bde02dfc088fcc1d8fd9bcd9cec87ba9232b799ce2ad/reflex-0.9.6a1.tar.gz", hash = "sha256:c3f7443da75cfb275d62e3b3a433e98aa94cfc72a9904f2a376fb22b2ddf17ce", size = 395383, upload-time = "2026-06-25T17:49:06.97Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c9/e2/b0044ba53a2a33498c15c90e1085410656d71fd2bf16a3be0217ae16d347/reflex-0.9.4-py3-none-any.whl", hash = "sha256:510ffb3fc1ecf14024add567c97ff600d8aca9e5d28bc6ec2802b4b34a085b5b", size = 638383, upload-time = "2026-06-04T01:44:23.999Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/35/544eaf18aa53ffda487718b6c660a653699437fbcc19419b12da3dd72c21/reflex-0.9.6a1-py3-none-any.whl", hash = "sha256:f439e535131471017e620747416eb76c6450d8bfea84b3694a5154ef14ef8a2f", size = 649612, upload-time = "2026-06-25T17:49:08.504Z" },
 ]
 
 [package.optional-dependencies]
@@ -729,7 +732,7 @@ db = [
 
 [[package]]
 name = "reflex-base"
-version = "0.9.4"
+version = "0.9.6a1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
@@ -738,9 +741,9 @@ dependencies = [
     { name = "rich" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/02/6d/995b428c33bfa62e33d22e3a8058cb5991b332988b6adcca273d32cc3217/reflex_base-0.9.4.tar.gz", hash = "sha256:a54ba3d319136fded095b099a0c5074b5913db274ac1a74757ad9e4cd7d0788c", size = 243482, upload-time = "2026-06-04T01:44:10.11Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/58/0afd3463b51735fdab844da00d92e7a22ee9238d52a632a28ab9e7b34393/reflex_base-0.9.6a1.tar.gz", hash = "sha256:db29db4949d972d79d703ae17f9f7e711430fddb61885d0d1c5f815fd652b57c", size = 262185, upload-time = "2026-06-25T17:49:03.591Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/34/bb/66f48b3ef07b7bf758ffcf6f40bc1347a822e91ce27acd80a797d42e1522/reflex_base-0.9.4-py3-none-any.whl", hash = "sha256:1450ce2d24e19d978003ad8938c1eb1deea5951da5e3f166906b416a90c64d71", size = 286422, upload-time = "2026-06-04T01:44:08.649Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/3f/1df7133b35cf5959ba5ea273211e3402d1adcd75b5526d8963856fdca793/reflex_base-0.9.6a1-py3-none-any.whl", hash = "sha256:06e385cf95107c7c552ff47d90ff1fc8aecd92f20649c27b2f5fbba7d3bcce8b", size = 303794, upload-time = "2026-06-25T17:49:04.551Z" },
 ]
 
 [[package]]
@@ -760,7 +763,7 @@ wheels = [
 
 [[package]]
 name = "reflex-components-core"
-version = "0.9.4"
+version = "0.9.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-multipart" },
@@ -770,9 +773,9 @@ dependencies = [
     { name = "starlette" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7a/cf/5b0896e5929df1619c0119c5c56f0cf548df33585b7ad3db78dd886230d4/reflex_components_core-0.9.4.tar.gz", hash = "sha256:5973ca0520510246f613d12ed8ff99998323da23d88e5240b5c873fac696a041", size = 104166, upload-time = "2026-06-04T01:44:16.252Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/34/c6cb7e0198115582fbbd50061eb1e24069c91b0dcf4861f6e5c6c34bd743/reflex_components_core-0.9.5.tar.gz", hash = "sha256:e95f9d39c1785293c7b0ff0e81d410b24441bfe9d59f86c440a14fbb72d8fd61", size = 107438, upload-time = "2026-06-10T20:23:15.051Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/f2/f8936a7ca2a4efea48c3e5fc938138ca0f093ea88b6ea9908431eb96ec46/reflex_components_core-0.9.4-py3-none-any.whl", hash = "sha256:111bdc2ed0a1f60cd22f2cf0300daca5987031e1446d2caf784be63a6fe0e5a4", size = 173818, upload-time = "2026-06-04T01:44:17.318Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/23/ecc22652481bd1b462de7ca4bebac1f08c965293f13b9c29eb22519ebb47/reflex_components_core-0.9.5-py3-none-any.whl", hash = "sha256:478c7d04b8e2adc60905254810a04c61935352686e9a3dfe22ddd07ff4010bf5", size = 176321, upload-time = "2026-06-10T20:23:16.024Z" },
 ]
 
 [[package]]
@@ -982,7 +985,7 @@ requires-dist = [
     { name = "greenlet", specifier = ">=3.5.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
-    { name = "reflex", extras = ["db"], specifier = "~=0.9.4" },
+    { name = "reflex", extras = ["db"], specifier = "~=0.9.6a1" },
     { name = "reflex-google-auth", specifier = ">=0.0.4" },
 ]
 
@@ -1062,14 +1065,14 @@ wheels = [
 
 [[package]]
 name = "starlette"
-version = "1.2.1"
+version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/25/44/ec35f1b6e83094b997da438a02c8c9b0ade2b1e84cfc48bd4656780760a6/starlette-1.2.1.tar.gz", hash = "sha256:9b9b5ebb992e67d6093741e63c2f59e4f6fff986f81163c087867bd7b924b3f6", size = 2701854, upload-time = "2026-05-31T01:07:51.847Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/e3/7c1dc7381d9f8ab7d854328ebfa884e62cb3f3d8549ddfd37c7814f42afa/starlette-1.3.1.tar.gz", hash = "sha256:05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0", size = 2703240, upload-time = "2026-06-12T09:23:11.602Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/54/196d0c1db10af76baa4f64894448505d60d3cdf70ef92cbb35f46a4e4c71/starlette-1.2.1-py3-none-any.whl", hash = "sha256:4de0082d08c8f6764a85a54cf1120d6939507a19905c7768acad2a9f875d2b89", size = 73350, upload-time = "2026-05-31T01:07:50.09Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/bb/2799cc2ede3ed41131f8975621e7213dfc7ef4acbbaadfa440f32500c370/starlette-1.3.1-py3-none-any.whl", hash = "sha256:c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6", size = 73632, upload-time = "2026-06-12T09:23:10.017Z" },
 ]
 
 [[package]]
