@@ -1,43 +1,58 @@
-import re
-import uuid
+"""Shared fixtures for the rx_shout integration tests."""
 
 import pytest
-from playwright.sync_api import Page, expect
+from helpers import ALICE, BOB, create_post, login_as, logout
+from playwright.sync_api import Page
 from reflex_enterprise.testing import AppManager, ReflexApp
 
 
-def _login_as(reflex_app: ReflexApp, page: Page, email: str):
-    page.goto(f"{reflex_app.url}/login?redirect_to=%2F")
-    page.get_by_text("Login with Mock", exact=True).click()
-    # Login with Mock provider
-    page.get_by_text(email, exact=True).click()
-    # Expect the url to change to / after login
-    expect(page).to_have_url(f"{reflex_app.url}/")
+@pytest.fixture(scope="session")
+def _admin_seeded() -> list[bool]:
+    """Session-wide flag recording whether the admin user has been created."""
+    return []
 
 
-def _logout(reflex_app: ReflexApp, page: Page):
-    page.goto(f"{reflex_app.url}/logout?redirect_to=%2F")
-    page.get_by_text("End session", exact=True).click()
-    # Expect the url to change to / after logout
-    expect(page).to_have_url(re.compile(re.escape(reflex_app.url + "/?") + ".*"))
+@pytest.fixture
+def admin_user_exists(reflex_app: ReflexApp, page: Page, _admin_seeded: list[bool]):
+    """Guarantee alice is the first user ever created (UserInfo.id == 1 == admin).
+
+    Any fixture that logs in a non-admin user must depend on this so that the
+    non-admin user does not accidentally claim the admin user id.
+    """
+    if not _admin_seeded:
+        login_as(reflex_app, page, ALICE)
+        logout(reflex_app, page)
+        _admin_seeded.append(True)
 
 
 @pytest.fixture
 def alice_logged_in(reflex_app: ReflexApp, page: Page):
-    _login_as(reflex_app, page, "alice@example.com")
+    """Log in as alice (the admin) for the duration of the test."""
+    login_as(reflex_app, page, ALICE)
     yield
-    _logout(reflex_app, page)
+    logout(reflex_app, page)
+
+
+@pytest.fixture
+def bob_logged_in(reflex_app: ReflexApp, page: Page, admin_user_exists: None):
+    """Log in as bob (a non-admin) for the duration of the test."""
+    login_as(reflex_app, page, BOB)
+    yield
+    logout(reflex_app, page)
 
 
 @pytest.fixture
 def post_by_alice(reflex_app: ReflexApp, page: Page, alice_logged_in: None):
+    """Create a post on the main feed as alice and return its content."""
     page.goto(f"{reflex_app.url}")
-    post_content = f"test_create_post {uuid.uuid4()}"
-    page.get_by_placeholder("Enter text here...").fill(post_content)
-    page.get_by_role("button", name="Post", exact=True).click()
-    # Expect the post to be visible on the page
-    expect(page.get_by_text(post_content)).to_be_visible()
-    return post_content
+    return create_post(page, prefix="test_create_post")
+
+
+@pytest.fixture
+def post_by_bob(reflex_app: ReflexApp, page: Page, bob_logged_in: None):
+    """Create a post on the main feed as bob and return its content."""
+    page.goto(f"{reflex_app.url}")
+    return create_post(page, prefix="post_by_bob")
 
 
 @pytest.fixture(scope="session")
