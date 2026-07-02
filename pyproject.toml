@@ -3,7 +3,7 @@ name = "rx-shout"
 version = "0.1.0"
 description = "A shoutbox-like app for posting of images and text."
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.22.1",
     "boto3>=1.43.4",
@@ -19,6 +19,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "codespell>=2.4.2",
+    "moto[server]>=5.2.2",
     "oidc-provider-mock>=0.4.6",
     "pre-commit>=4.6.0",
     "pyright>=1.1.410",
@@ -31,25 +32,31 @@ reflex-enterprise = { path = "/Users/masenf/code/reflex-dev/reflex-enterprise" }
 
 [tool.pytest.ini_options]
 addopts = ["--cov", "--cov-report=term-missing"]
+# Make `rx_shout` importable from the unit tests without installing the project.
+pythonpath = ["."]
+reflex_run_mode = "dev,prod"
 
 [tool.coverage.run]
-# Measure the app package; most execution happens inside the `reflex run`
-# subprocess started by the reflex_app fixture, not in the pytest process.
+# Measure the app code explicitly since it may not be directly imported in the
+# main pytest process.
 source = ["rx_shout"]
 branch = true
-# Subprocesses write their own .coverage.* files; pytest-cov combines them.
+# a subprocess will write a separate .coverage.* file to be combined by pytest-cov.
 parallel = true
-# patch=subprocess injects coverage into the `reflex run` child process (and
-# any Python processes it spawns); patch=_exit flushes data on os._exit().
-patch = ["subprocess", "_exit"]
-# The test harness stops the app with SIGTERM -- flush coverage data on it.
+patch = [
+  "subprocess",  # inject coverage into `reflex run` and workers
+  "_exit",       # flush coverage data on os._exit()
+]
+# The test harness stops the app with SIGTERM.
 sigterm = true
-# The pytest process itself never imports rx_shout (all execution happens in
-# the app subprocess), so its own empty measurement is expected.
+# Ignore warning if the test cases never imports `rx_shout` directly.
 disable_warnings = ["no-data-collected"]
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
+# The prod-mode side of dev/prod guards cannot be reached by the dev-mode test
+# app; setting partial_branches replaces the default, so keep the pragma too.
+partial_branches = ["pragma: no branch", "if not is_prod_mode\\(\\):"]
 skip_empty = true
 
 [tool.ruff]

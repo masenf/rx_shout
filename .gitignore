@@ -2,9 +2,11 @@
 *.db
 *.py[cod]
 .env
+prod.env
 .web
 __pycache__/
 assets/external/
 uploaded_files
 .coverage
 .coverage.*
+htmlcov/

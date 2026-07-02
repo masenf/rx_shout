@@ -91,3 +91,38 @@ def test_non_admin_cannot_edit_topic_description(
     heading.click()
     page.wait_for_timeout(1000)
     expect(page.get_by_placeholder("Edit topic description...")).to_have_count(0)
+
+
+def test_edit_description_on_main_feed_is_noop(
+    reflex_app: ReflexApp, page: Page, alice_logged_in: None
+):
+    """The main feed has no topic, so saving a description changes nothing."""
+    page.goto(f"{reflex_app.url}/")
+    heading = page.get_by_role("heading", name="Shout Your Thoughts Into the Void")
+    heading.click()
+    editor = page.get_by_placeholder("Edit topic description...")
+    expect(editor).to_be_visible()
+    editor.fill("description without a topic")
+    page.get_by_role("button", name="Save Description").click()
+    # The editor closes and the default heading is unchanged.
+    expect(editor).to_have_count(0)
+    expect(heading).to_be_visible()
+    page.goto(f"{reflex_app.url}/")
+    expect(
+        page.get_by_role("heading", name="Shout Your Thoughts Into the Void")
+    ).to_be_visible()
+
+
+def test_saving_empty_description_is_noop(
+    reflex_app: ReflexApp, page: Page, alice_logged_in: None
+):
+    """Saving the editor with an empty value closes it without changes."""
+    topic = _topic_name()
+    page.goto(f"{reflex_app.url}/?topic={topic}")
+    page.get_by_role("heading", name=topic).click()
+    editor = page.get_by_placeholder("Edit topic description...")
+    expect(editor).to_be_visible()
+    editor.fill("")
+    page.get_by_role("button", name="Save Description").click()
+    expect(editor).to_have_count(0)
+    expect(page.get_by_role("heading", name=topic)).to_be_visible()

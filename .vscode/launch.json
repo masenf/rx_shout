@@ -1,0 +1,49 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "pytest current",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}",
+                "-vv",
+                "--no-cov",
+            ],
+            "cwd":"${workspaceFolder}",
+        },
+        {
+            "name": "pytest all",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${workspaceFolder}/tests",
+                "-vv",
+            ],
+            "cwd":"${workspaceFolder}",
+        },
+        {
+            "name": "view coverage report",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "http.server",
+            "args": [
+                "--directory", "${workspaceFolder}/htmlcov",
+                "--bind", "127.0.0.1",
+                "8912",
+            ],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "coverage html",
+            "serverReadyAction": {
+                "pattern": "Serving HTTP on \\S+ port ([0-9]+)",
+                "uriFormat": "http://127.0.0.1:%s",
+                "action": "openExternally",
+            },
+        },
+    ]
+}

@@ -4,12 +4,37 @@ These are plain functions (not fixtures) so tests that switch between users
 mid-test can call them directly.
 """
 
+import base64
 import contextlib
 import re
 import uuid
+from pathlib import Path
 
 from playwright.sync_api import Locator, Page, expect
 from reflex_enterprise.testing import ReflexApp
+
+# A valid 1x1 PNG.
+PNG_BYTES = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
+    "AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
+
+# Where the backend writes uploads before they are pushed to S3. The app under
+# test runs with its cwd at the project root, so this resolves the same path.
+UPLOAD_DIR = Path(__file__).parents[2] / "uploaded_files"
+
+
+def upload_image(page: Page, png_file: Path):
+    """Select the image in the upload dropzone and wait for the preview."""
+    page.locator("input[type='file']").set_input_files(png_file)
+    expect(page.locator("img[src*='_upload']").first).to_be_visible()
+
+
+def preview_filename(page: Page) -> str:
+    """Return the server-side filename parsed from the preview img src."""
+    src = page.locator("img[src*='_upload']").first.get_attribute("src")
+    return src.rstrip("/").rsplit("/", 1)[-1]
+
 
 # Seed users offered by the dev-mode mock OIDC provider (see rx_shout/auth/mock.py).
 # The first user to ever sign in becomes UserInfo.id == 1, which the app treats
