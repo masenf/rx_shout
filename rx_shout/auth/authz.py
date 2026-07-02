@@ -1,4 +1,12 @@
+import os
+
 import reflex_enterprise as rxe
+from reflex.utils.exec import is_prod_mode
+
+
+def mock_auth_enabled() -> bool:
+    """Whether the dev mock auth provider should be active (dev mode only)."""
+    return not is_prod_mode() or bool(os.environ.get("PYTEST_CURRENT_TEST"))
 
 
 async def require_valid_user(ctx: rxe.auth.AuthContext) -> bool:

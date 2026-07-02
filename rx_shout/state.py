@@ -30,8 +30,6 @@ class LoadingState(rx.State):
 
 
 class UserState(rxe.auth.AuthUserState):
-    auth_error: str = ""
-
     @rxe.var(auth=False)
     def user_info(self) -> UserInfo:
         if not self.sub:
@@ -69,43 +67,20 @@ class UserState(rxe.auth.AuthUserState):
             user = (
                 await asession.exec(select(UserInfo).where(UserInfo.id == user_id))
             ).first()
-            if user:
-                user.enabled = enable
+            if not user:
+                return  # pragma: no cover
+            user.enabled = enable
             asession.add(user)
             await asession.commit()
         return TopicState.load_entries
 
-    @rxe.var(initial_value=False, auth=False)
+    @rx.var(initial_value=False)
     def is_admin(self) -> bool:
         user_is_admin = bool(self._is_valid_user() and self.user_info.id == 1)
         return user_is_admin
 
-    def _check_valid_user(self):
-        if self._is_valid_user():
-            self.auth_error = ""
-            return True
-        elif not self.user_info.enabled:
-            self.auth_error = "Your account has been disabled."
-        else:
-            self.auth_error = "Sign in to post."
-        return False
-
     def _is_valid_user(self) -> bool:
         return bool(self.sub and self.user_info.id > 0 and self.user_info.enabled)
-
-    @classmethod
-    def auth_error_callout(cls) -> rx.Component:
-        """Rendered when there is a user auth error."""
-        return rx.cond(
-            cls.auth_error,
-            rx.callout.root(
-                rx.callout.icon(rx.icon("triangle_alert", size=20)),
-                rx.callout.text(cls.auth_error),
-                size="1",
-                color_scheme="red",
-                variant="soft",
-            ),
-        )
 
 
 class TopicState(rx.State):
@@ -275,10 +250,6 @@ class PostFormState(rx.State):
     image_relative_path: rx.Field[str]
 
     @rx.event
-    def set_form_error(self, error: str):
-        self.form_error = error
-
-    @rx.event
     async def handle_submit(self, form_data: dict[str, Any]):
         """Handle form submission."""
         form_data.pop(UPLOAD_ID, None)
@@ -339,8 +310,9 @@ class EntryActionState(rx.State):
             entry = (
                 await asession.exec(select(Entry).where(Entry.id == entry_id))
             ).first()
-            if entry:
-                entry.hidden = True
+            if not entry:
+                return
+            entry.hidden = True
             asession.add(entry)
             await asession.commit()
         yield TopicState.load_entries
@@ -377,8 +349,6 @@ class EntryActionState(rx.State):
     async def unlike_entry(self, entry_id: int):
         """Unlike an entry."""
         user_state = await self.get_state(UserState)
-        if not user_state._is_valid_user():
-            return
         loading_state = await self.get_state(LoadingState)
         loading_state.liking = entry_id
         yield

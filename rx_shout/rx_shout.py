@@ -6,9 +6,10 @@ import sys
 import reflex as rx
 import reflex_enterprise as rxe
 
+from .auth.authz import mock_auth_enabled
 from .components.entry import entry_view
 from .components.form import submission_form
-from .state import PostFormState, TopicState, UserState
+from .state import TopicState, UserState
 
 
 def login_button() -> rx.Component:
@@ -43,12 +44,10 @@ def index() -> rx.Component:
                         UserState.user_info.enabled,
                         submission_form(),
                         rx.flex(
-                            UserState.auth_error_callout(),
                             rx.spacer(),
                             login_button(),
                             justify="end",
                             width="100%",
-                            on_click=PostFormState.set_form_error(""),
                         ),
                     ),
                     width="100%",
@@ -94,9 +93,7 @@ app.add_page(
 
 # In dev mode, run a mock OIDC provider so developers can log in as any user.
 # Imported lazily so the MockAuthState provider is never defined in production.
-from reflex.utils.exec import is_prod_mode  # noqa: E402
-
-if not is_prod_mode():
+if mock_auth_enabled():  # pragma: no cover
     from .auth.mock import register_mock_auth
 
     register_mock_auth(app)

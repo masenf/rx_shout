@@ -18,22 +18,23 @@ Wiring:
 from __future__ import annotations
 
 import contextlib
+import os
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
 import reflex as rx
 import reflex_enterprise as rxe
-from reflex.utils.exec import is_prod_mode
 
-# Fixed port so the issuer URI is stable across restarts (the default the
-# library uses too). The browser and the backend both reach it on localhost.
+from .authz import mock_auth_enabled
+
+# Preferred port, so the issuer URI is stable across restarts. If it is
+# already taken (e.g. another dev instance running concurrently), the server
+# falls back to a system-assigned port.
 MOCK_OIDC_PORT = 9400
-MOCK_OIDC_ISSUER = f"http://localhost:{MOCK_OIDC_PORT}"
 
-
-def mock_auth_enabled() -> bool:
-    """Whether the dev mock auth provider should be active (dev mode only)."""
-    return not is_prod_mode()
+# Issuer URI of the running mock provider, filled in by the lifespan task once
+# the port is known. The browser and the backend both reach it on localhost.
+_mock_oidc_issuer: str | None = None
 
 
 class MockAuthState(rxe.auth.OIDCAuthState, rx.State):
@@ -46,7 +47,12 @@ class MockAuthState(rxe.auth.OIDCAuthState, rx.State):
     __provider__ = "mock"
 
     async def _issuer_uri(self) -> str:
-        return MOCK_OIDC_ISSUER
+        if _mock_oidc_issuer is None:
+            raise RuntimeError(
+                "Mock OIDC provider is not running; "
+                "was register_mock_auth() called on the app?"
+            )
+        return _mock_oidc_issuer
 
     async def _client_id(self) -> str:
         return "rx-shout-dev"
@@ -85,11 +91,30 @@ async def _mock_oidc_lifespan() -> AsyncIterator[None]:
     """Run the mock OIDC provider on a background thread for the app's lifetime."""
     from oidc_provider_mock import run_server_in_thread
 
-    with run_server_in_thread(port=MOCK_OIDC_PORT, user_claims=_seed_users(), access_token_max_age=timedelta(minutes=2)) as server:
-        print(  # noqa: T201 - surfaced in the dev server log
-            f"Mock OIDC provider running at http://localhost:{server.server_port}"
+    def _start(port: int):
+        return run_server_in_thread(
+            port=port,
+            user_claims=_seed_users(),
+            access_token_max_age=timedelta(minutes=2),
         )
-        yield
+
+    global _mock_oidc_issuer
+    with contextlib.ExitStack() as stack:
+        try:
+            server = stack.enter_context(_start(MOCK_OIDC_PORT))
+        except (OSError, SystemExit):
+            # Port taken (e.g. another dev instance) — let the OS pick one.
+            # werkzeug turns the bind EADDRINUSE into sys.exit(1), hence
+            # SystemExit rather than OSError.
+            server = stack.enter_context(_start(0))
+        _mock_oidc_issuer = f"http://localhost:{server.server_port}"
+        print(  # noqa: T201 - surfaced in the dev server log
+            f"Mock OIDC provider running at {_mock_oidc_issuer}"
+        )
+        try:
+            yield
+        finally:
+            _mock_oidc_issuer = None
 
 
 def register_mock_auth(app: rxe.App) -> None:
