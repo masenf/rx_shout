@@ -48,7 +48,7 @@ def entry_metadata(e: Entry) -> rx.Component:
         rx.text.strong(e.author.name),
         ban_button(e.author),
         rx.spacer(),
-        rx.text(e.ts, font_size="0.75em"),
+        rx.text(rx.moment(e.ts, format="YYYY-MM-DD HH:mm:ss"), font_size="0.75em"),
         width="100%",
     )
 

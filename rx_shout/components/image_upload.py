@@ -39,7 +39,7 @@ class UploadState(rx.State):
     """State for handling file uploads."""
 
     @rx.event
-    async def handle_upload(self, files: list[rx.UploadFile] = []):
+    async def handle_upload(self, files: list[rx.UploadFile]):
         """Write the file bytes to disk and update the filename in base state."""
         user_state = await self.get_state(UserState)
         if not user_state._is_valid_user():
@@ -49,15 +49,14 @@ class UploadState(rx.State):
             return
         yield rx.clear_selected_files(UPLOAD_ID)
         try:
-            for file in files:
-                upload_data = await file.read()
-                filename = f"{uuid.uuid4()}.png"
-                outfile = rx.get_upload_dir() / filename
-                outfile.parent.mkdir(parents=True, exist_ok=True)
-                outfile.write_bytes(upload_data)
-                post_form_state = await self.get_state(PostFormState)
-                post_form_state.image_relative_path = filename
-                break  # only allow one upload
+            file = next(iter(files))
+            upload_data = await file.read()
+            filename = f"{uuid.uuid4()}.png"
+            outfile = rx.get_upload_dir() / filename
+            outfile.parent.mkdir(parents=True, exist_ok=True)
+            outfile.write_bytes(upload_data)
+            post_form_state = await self.get_state(PostFormState)
+            post_form_state.image_relative_path = filename
         finally:
             progress_state = await self.get_state(UploadProgressState)
             progress_state.is_uploading = False

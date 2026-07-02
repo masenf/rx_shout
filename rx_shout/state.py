@@ -311,7 +311,7 @@ class EntryActionState(rx.State):
                 await asession.exec(select(Entry).where(Entry.id == entry_id))
             ).first()
             if not entry:
-                return
+                return  # pragma: no cover
             entry.hidden = True
             asession.add(entry)
             await asession.commit()

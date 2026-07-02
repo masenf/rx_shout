@@ -27,9 +27,9 @@ class Entry(SQLModel, table=True):
         back_populates="entries",
     )
 
-    def dict(self, *args, **kwargs) -> dict:
-        d = super().dict(*args, **kwargs)
-        d["ts"] = self.ts.replace(microsecond=0).isoformat()
+    def model_dump(self, *args, **kwargs) -> dict:
+        d = super().model_dump(*args, **kwargs)
+        d["ts"] = self.ts.replace(microsecond=0, tzinfo=datetime.timezone.utc).isoformat()
         return d
 
 
