@@ -18,7 +18,6 @@ Wiring:
 from __future__ import annotations
 
 import contextlib
-import os
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
@@ -102,7 +101,7 @@ async def _mock_oidc_lifespan() -> AsyncIterator[None]:
     with contextlib.ExitStack() as stack:
         try:
             server = stack.enter_context(_start(MOCK_OIDC_PORT))
-        except (OSError, SystemExit):
+        except OSError, SystemExit:
             # Port taken (e.g. another dev instance) — let the OS pick one.
             # werkzeug turns the bind EADDRINUSE into sys.exit(1), hence
             # SystemExit rather than OSError.

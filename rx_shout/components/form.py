@@ -24,21 +24,26 @@ def form_error_callout() -> rx.Component:
 
 
 class EditTopicViewState(UserState):
+    """Controls visibility of the topic description editor."""
+
     editor_open: bool = False
 
     @rx.event
     def set_editor_open(self, value: bool):
+        """Open or close the topic description editor (admin only)."""
         if self.is_admin:
             self.editor_open = value
 
     @rx.event
     def handle_submit(self, form_dict: dict[str, Any]):
+        """Save the edited topic description and close the editor."""
         self.editor_open = False
         if form_dict.get("topic_description"):
             return TopicState.edit_topic_description(form_dict["topic_description"])
 
 
 def edit_topic_view() -> rx.Component:
+    """The form for editing the topic description."""
     return rx.form.root(
         rx.hstack(
             rx.input(
@@ -63,6 +68,7 @@ def edit_topic_view() -> rx.Component:
 
 
 def topic_description() -> rx.Component:
+    """The topic description heading; admins can click it to edit."""
     return rx.heading(
         rx.cond(
             TopicState.topic,
@@ -84,6 +90,7 @@ def topic_description() -> rx.Component:
 
 
 def topic_view() -> rx.Component:
+    """The topic header, showing either the description or its editor."""
     return rx.hstack(
         rx.icon("megaphone", size=25),
         rx.cond(

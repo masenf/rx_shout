@@ -180,6 +180,7 @@ def trash_badge(e: Entry) -> rx.Component:
 
 
 def entry_footer(e: Entry) -> rx.Component:
+    """The like, flag, and delete controls below an entry."""
     return rx.hstack(
         like_badge(e),
         rx.spacer(),

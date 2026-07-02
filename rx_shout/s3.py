@@ -1,3 +1,5 @@
+"""Optional S3 storage for uploaded images, configured via environment variables."""
+
 import os
 from urllib.parse import urljoin
 
@@ -13,6 +15,7 @@ _client = None
 
 
 def get_client():
+    """Get the S3 client, or None if S3 is not configured."""
     global _client
     if endpoint_url:
         _client = boto3.client(
@@ -25,6 +28,7 @@ def get_client():
 
 
 def upload_image(filename: str, delete_original: bool = False) -> str:
+    """Upload an image from the upload dir to S3 and return its public URL."""
     if bucket_access_url is None:
         raise RuntimeError("Set S3_BUCKET_ACCESS_URL environment variable")
     client = get_client()

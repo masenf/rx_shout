@@ -10,12 +10,15 @@ MAX_FILE_SIZE = 5 * 1024**2  # 5 MB
 
 
 class UploadProgressState(rx.State):
+    """Tracks the progress of an in-flight image upload."""
+
     upload_progress: int
     is_uploading: bool = False
     is_cancelled: bool = False
 
     @rx.event
     def set_is_cancelled(self, value: bool):
+        """Mark the upload as cancelled (or not)."""
         self.is_cancelled = value
 
     @rx.event

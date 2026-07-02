@@ -13,6 +13,7 @@ from .state import TopicState, UserState
 
 
 def login_button() -> rx.Component:
+    """The sign-in button shown to logged-out users."""
     return rx.box(
         rx.button(
             rx.icon("log-in", size=20),
@@ -29,6 +30,7 @@ def login_button() -> rx.Component:
 
 
 def index() -> rx.Component:
+    """The main page: submission form and list of entries."""
     return rx.fragment(
         rx.hstack(
             rx.icon("sun", size=16),

@@ -1,6 +1,5 @@
 import reflex as rx
 import reflex_enterprise as rxe
-from reflex.utils.exec import is_prod_mode
 
 from rx_shout.auth.authz import mock_auth_enabled, require_valid_user
 

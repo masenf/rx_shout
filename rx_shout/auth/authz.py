@@ -1,3 +1,5 @@
+"""Authorization predicates for gating event handlers and vars."""
+
 import os
 
 import reflex_enterprise as rxe

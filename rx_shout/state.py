@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import functools
 from typing import Any
 
@@ -30,8 +31,11 @@ class LoadingState(rx.State):
 
 
 class UserState(rxe.auth.AuthUserState):
+    """Maps the authenticated user to its UserInfo record."""
+
     @rxe.var(auth=False)
     def user_info(self) -> UserInfo:
+        """The UserInfo record for the logged-in user, created on first login."""
         if not self.sub:
             return UserInfo(id=-1, ext_id="", email="", enabled=False)
         with rx.session() as session:
@@ -57,7 +61,7 @@ class UserState(rxe.auth.AuthUserState):
                 session.commit()
                 session.refresh(user)
                 # Populate the new author relationship.
-                user.author
+                _ = user.author
             return user
 
     @rxe.event(auth=require_admin)
@@ -76,6 +80,7 @@ class UserState(rxe.auth.AuthUserState):
 
     @rx.var(initial_value=False)
     def is_admin(self) -> bool:
+        """Whether the logged-in user is an admin."""
         user_is_admin = bool(self._is_valid_user() and self.user_info.id == 1)
         return user_is_admin
 
@@ -84,16 +89,20 @@ class UserState(rxe.auth.AuthUserState):
 
 
 class TopicState(rx.State):
+    """The current topic and its entries."""
+
     entries: rx.Field[list[Entry]] = rxe.field(auth=False)
     topic: rx.Field[Topic | None] = rxe.field(auth=False)
     entry_like_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(auth=False)
 
     @rxe.var(auth=False)
     def topic_name(self) -> str:
+        """The topic name from the URL query parameters."""
         return self.router.url.query_parameters.get("topic", "")
 
     @rxe.var(auth=False)
     def topic_description(self) -> str:
+        """The description of the current topic, if any."""
         return self.topic.description if self.topic else ""
 
     async def _load_topic(self, asession: AsyncSession) -> Topic | None:
@@ -190,6 +199,8 @@ class TopicState(rx.State):
 
 
 class UserFlagState(rx.State):
+    """Per-user flag data and admin-only flag counts."""
+
     user_entry_flags: rx.Field[dict[int, dict[str, bool]]]
     entry_flag_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(
         auth=require_admin
@@ -292,14 +303,14 @@ class PostFormState(rx.State):
     async def delete_uploaded_image(self):
         """If the user wants to delete the image before making a post."""
         if self.image_relative_path:
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 (rx.get_upload_dir() / self.image_relative_path).unlink()
-            except FileNotFoundError:
-                pass
             self.image_relative_path = ""
 
 
 class EntryActionState(rx.State):
+    """Actions on individual entries: like, flag, and delete."""
+
     @rxe.event(auth=require_admin)
     async def delete_entry(self, entry_id: int):
         """Delete an entry from the database."""

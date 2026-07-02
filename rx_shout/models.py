@@ -7,6 +7,8 @@ from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
 
 
 class Entry(SQLModel, table=True):
+    """A posted message, optionally with an image and topic."""
+
     id: int = Field(default=None, primary_key=True)
     ts: datetime.datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now()),
@@ -28,12 +30,17 @@ class Entry(SQLModel, table=True):
     )
 
     def model_dump(self, *args, **kwargs) -> dict:
+        """Serialize the entry with a normalized UTC ISO-8601 timestamp."""
         d = super().model_dump(*args, **kwargs)
-        d["ts"] = self.ts.replace(microsecond=0, tzinfo=datetime.timezone.utc).isoformat()
+        d["ts"] = self.ts.replace(
+            microsecond=0, tzinfo=datetime.timezone.utc
+        ).isoformat()
         return d
 
 
 class UserInfo(SQLModel, table=True):
+    """A registered user, keyed to the auth provider by ext_id."""
+
     id: int = Field(default=None, primary_key=True)
     ext_id: str = Field(nullable=False, unique=True, index=True)
     email: str = Field(nullable=False)
@@ -46,6 +53,8 @@ class UserInfo(SQLModel, table=True):
 
 
 class Author(SQLModel, table=True):
+    """Public display info (name and picture) for a user."""
+
     user_id: int = Field(
         nullable=False,
         foreign_key="userinfo.id",
@@ -63,6 +72,8 @@ class Author(SQLModel, table=True):
 
 
 class EntryFlags(SQLModel, table=True):
+    """A per-user flag (like or flag) on an entry."""
+
     id: int = Field(default=None, primary_key=True)
     user_id: int = Field(nullable=False, foreign_key="userinfo.id", index=True)
     entry_id: int = Field(nullable=False, foreign_key="entry.id", index=True)
@@ -73,6 +84,8 @@ class EntryFlags(SQLModel, table=True):
 
 
 class Topic(SQLModel, table=True):
+    """A named board that groups entries."""
+
     id: int = Field(default=None, primary_key=True)
     name: str = Field(nullable=False, unique=True, index=True)
     description: str = ""
