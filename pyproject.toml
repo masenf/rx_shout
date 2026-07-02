@@ -22,11 +22,35 @@ dev = [
     "oidc-provider-mock>=0.4.6",
     "pre-commit>=4.6.0",
     "pyright>=1.1.410",
+    "pytest-cov>=7.0",
     "ruff>=0.15.19",
 ]
 
 [tool.uv.sources]
 reflex-enterprise = { path = "/Users/masenf/code/reflex-dev/reflex-enterprise" }
+
+[tool.pytest.ini_options]
+addopts = ["--cov", "--cov-report=term-missing"]
+
+[tool.coverage.run]
+# Measure the app package; most execution happens inside the `reflex run`
+# subprocess started by the reflex_app fixture, not in the pytest process.
+source = ["rx_shout"]
+branch = true
+# Subprocesses write their own .coverage.* files; pytest-cov combines them.
+parallel = true
+# patch=subprocess injects coverage into the `reflex run` child process (and
+# any Python processes it spawns); patch=_exit flushes data on os._exit().
+patch = ["subprocess", "_exit"]
+# The test harness stops the app with SIGTERM -- flush coverage data on it.
+sigterm = true
+# The pytest process itself never imports rx_shout (all execution happens in
+# the app subprocess), so its own empty measurement is expected.
+disable_warnings = ["no-data-collected"]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
+skip_empty = true
 
 [tool.ruff]
 target-version = "py314"

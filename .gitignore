@@ -6,3 +6,5 @@
 __pycache__/
 assets/external/
 uploaded_files
+.coverage
+.coverage.*
