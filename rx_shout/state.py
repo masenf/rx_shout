@@ -75,11 +75,10 @@ class UserState(rxe.auth.AuthUserState):
             await asession.commit()
         return TopicState.load_entries
 
-    @rx.var(initial_value=False)
+    @rxe.var(initial_value=False, auth=False)
     def is_admin(self) -> bool:
-        if self._is_valid_user() and self.user_info.id == 1:
-            return True
-        return False
+        user_is_admin = bool(self._is_valid_user() and self.user_info.id == 1)
+        return user_is_admin
 
     def _check_valid_user(self):
         if self._is_valid_user():

@@ -11,18 +11,22 @@ dependencies = [
     "psycopg[binary]>=3.3.4",
     "python-dotenv>=1.2.2",
     "reflex-google-auth>=0.0.4",
-    "reflex[db]~=0.9.5",
-    "reflex-enterprise @ /Users/masen/code/reflex-dev/reflex-enterprise",
+    "reflex[db]~=0.9.6.post1",
+    "reflex-enterprise>=0.9.1",
+    "pytest-playwright>=0.8.0",
 ]
 
 [dependency-groups]
 dev = [
     "codespell>=2.4.2",
-    "oidc-provider-mock>=0.4.5",
+    "oidc-provider-mock>=0.4.6",
     "pre-commit>=4.6.0",
     "pyright>=1.1.410",
     "ruff>=0.15.19",
 ]
+
+[tool.uv.sources]
+reflex-enterprise = { path = "/Users/masenf/code/reflex-dev/reflex-enterprise" }
 
 [tool.ruff]
 target-version = "py314"

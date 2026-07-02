@@ -14,6 +14,7 @@ if not is_prod_mode():
 config = rxe.Config(
     app_name="rx_shout",
     db_url="sqlite:///reflex.db",
+    async_db_url="sqlite+aiosqlite:///reflex.db",
     plugins=[
         rx.plugins.SitemapPlugin(),
         rxe.auth.AuthPlugin(auth=require_valid_user, auth_providers=auth_providers),
