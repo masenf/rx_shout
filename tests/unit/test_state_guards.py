@@ -7,7 +7,30 @@ behavior is covered by the integration tests.
 from collections.abc import Callable
 from unittest import mock
 
+from rx_shout.components.image_upload import UploadState
 from rx_shout.state import PostFormState, UserFlagState, UserState
+
+
+def test_handle_upload_invalid_user(run_coro: Callable):
+    """An upload from a session without a valid user is dropped outright.
+
+    This guard backs up the AuthPlugin middleware, which already denies
+    unauthenticated /_upload requests before the handler runs (see
+    test_upload.test_upload_without_valid_user_is_noop), so it can only be
+    exercised by calling the handler directly.
+    """
+    state = UploadState(_reflex_internal_init=True)
+    user_state = mock.Mock(spec=UserState)
+    user_state._is_valid_user.return_value = False
+
+    async def _drain() -> list:
+        return [event async for event in state.handle_upload([mock.Mock()])]
+
+    with mock.patch.object(
+        UploadState, "get_state", mock.AsyncMock(return_value=user_state)
+    ):
+        # The handler bails before emitting any event (not even the toast).
+        assert run_coro(_drain()) == []
 
 
 def test_delete_uploaded_image_without_upload(run_coro: Callable):

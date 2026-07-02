@@ -161,10 +161,11 @@ def test_upload_progress_and_cancel(
 def test_upload_without_valid_user_is_noop(reflex_app: ReflexApp):
     """A raw POST to /_upload with an unknown client token changes nothing.
 
-    The dropzone is only rendered for logged-in users, so the server-side
-    guard in UploadState.handle_upload can only be exercised by hitting the
-    upload endpoint directly with a client token that maps to no session.
-    The handler must return early: no state deltas and no file on disk.
+    The dropzone is only rendered for logged-in users, so this forges the
+    request the frontend would never send. The AuthPlugin middleware denies
+    the event before UploadState.handle_upload runs (redirect-to-login goes
+    out-of-band, not in the upload response), so the response must carry no
+    state deltas and no file may be written to disk.
     """
     from rx_shout.components.image_upload import UploadState
 
@@ -179,8 +180,6 @@ def test_upload_without_valid_user_is_noop(reflex_app: ReflexApp):
         files={"files": ("evil.png", PNG_BYTES, "image/png")},
     )
     assert response.status_code == 200
-    print("RESPONSE TEXT:", repr(response.text))
-    print("APP LOGS TAIL:", reflex_app.logs()[-3000:])
     updates = [json.loads(line) for line in response.text.splitlines() if line.strip()]
     assert not any(update.get("delta") for update in updates)
     files_after = set(UPLOAD_DIR.glob("*")) if UPLOAD_DIR.exists() else set()
