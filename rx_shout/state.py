@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any
+from typing import Any, Sequence
 
 import reflex as rx
 import reflex_enterprise as rxe
 import sqlalchemy
+import sqlalchemy.orm
 from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -91,7 +92,7 @@ class UserState(rxe.auth.AuthUserState):
 class TopicState(rx.State):
     """The current topic and its entries."""
 
-    entries: rx.Field[list[Entry]] = rxe.field(auth=False)
+    entries: rx.Field[Sequence[Entry]] = rxe.field(auth=False)
     topic: rx.Field[Topic | None] = rxe.field(auth=False)
     entry_like_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(auth=False)
 
@@ -276,7 +277,8 @@ class PostFormState(rx.State):
             async with rx.asession() as asession:
                 entry = Entry(**form_data)
                 entry.author_id = user_state.user_info.id
-                entry.topic_id = topic_state.topic.id if topic_state.topic else None
+                if topic_state.topic:
+                    entry.topic_id = topic_state.topic.id
                 if self.image_relative_path:
                     if s3.endpoint_url:
                         entry.image = await rx._x.run_in_thread(
