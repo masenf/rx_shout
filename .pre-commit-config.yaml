@@ -28,3 +28,13 @@ repos:
         entry: codespell
         require_serial: true
         types_or: [python, pyi, markdown, text]
+
+      # Run over the whole project (per pyproject.toml), not just staged files,
+      # since a change in one file can surface type errors in another.
+      - id: pyright
+        name: pyright
+        language: system
+        entry: pyright
+        pass_filenames: false
+        require_serial: true
+        types_or: [python, pyi]
