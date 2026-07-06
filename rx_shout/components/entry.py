@@ -74,8 +74,8 @@ def entry_content(e: Entry) -> rx.Component:
 
 def like_badge(e: Entry) -> rx.Component:
     """The badge for the like count."""
-    like_counts = TopicState.entry_like_counts[e.id.to(str)]
-    user_flags = UserFlagState.user_entry_flags[e.id.to(str)]
+    like_counts = TopicState.entry_like_counts[e.id]
+    user_flags = UserFlagState.user_entry_flags[e.id]
     children = [
         rx.icon("heart"),
         rx.cond(
@@ -110,8 +110,8 @@ def like_badge(e: Entry) -> rx.Component:
 
 def flag_badge(e: Entry) -> rx.Component:
     """The badge for the flag count."""
-    entry_flags = UserFlagState.entry_flag_counts[e.id.to(str)]
-    user_flags = UserFlagState.user_entry_flags[e.id.to(str)]
+    entry_flags = UserFlagState.entry_flag_counts[e.id]
+    user_flags = UserFlagState.user_entry_flags[e.id]
     flag_count = rx.cond(
         UserState.is_admin & entry_flags & entry_flags["flag"],
         rx.text(entry_flags["flag"]),

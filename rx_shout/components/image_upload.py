@@ -1,6 +1,7 @@
 """Frontend components for handling image upload."""
 
 import uuid
+from typing import cast
 
 import reflex as rx
 
@@ -91,9 +92,14 @@ def upload_form() -> rx.Component:
         on_drop=[
             UploadProgressState.set_is_cancelled(False),
             UploadState.handle_upload(
-                rx.upload_files(
-                    upload_id=UPLOAD_ID,
-                    on_upload_progress=UploadProgressState.on_upload_progress,
+                # rx.upload_files returns a FileUpload marker that reflex
+                # substitutes for the handler's files argument at upload time.
+                cast(
+                    "rx.Var[list[rx.UploadFile]]",
+                    rx.upload_files(
+                        upload_id=UPLOAD_ID,
+                        on_upload_progress=UploadProgressState.on_upload_progress,
+                    ),
                 ),
             ),
         ],

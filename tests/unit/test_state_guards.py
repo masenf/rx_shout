@@ -7,6 +7,8 @@ behavior is covered by the integration tests.
 from collections.abc import Callable
 from unittest import mock
 
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from rx_shout.components.image_upload import UploadState
 from rx_shout.state import PostFormState, UserFlagState, UserState
 
@@ -19,7 +21,7 @@ def test_handle_upload_invalid_user(run_coro: Callable):
     test_upload.test_upload_without_valid_user_is_noop), so it can only be
     exercised by calling the handler directly.
     """
-    state = UploadState(_reflex_internal_init=True)
+    state = UploadState()
     user_state = mock.Mock(spec=UserState)
     user_state._is_valid_user.return_value = False
 
@@ -35,7 +37,7 @@ def test_handle_upload_invalid_user(run_coro: Callable):
 
 def test_delete_uploaded_image_without_upload(run_coro: Callable):
     """Deleting when no image was uploaded is a no-op."""
-    state = PostFormState(_reflex_internal_init=True)
+    state = PostFormState()
     state.image_relative_path = ""
     run_coro(state.delete_uploaded_image())
     assert state.image_relative_path == ""
@@ -43,9 +45,9 @@ def test_delete_uploaded_image_without_upload(run_coro: Callable):
 
 def test_load_user_flags_invalid_user(run_coro: Callable):
     """An invalid user gets empty flags without touching the database."""
-    state = UserFlagState(_reflex_internal_init=True)
+    state = UserFlagState()
     state.user_entry_flags = {1: {"like": True}}
     user_state = mock.Mock(spec=UserState)
     user_state._is_valid_user.return_value = False
-    run_coro(state._load_user_flags(None, user_state))
+    run_coro(state._load_user_flags(mock.Mock(spec=AsyncSession), user_state))
     assert state.user_entry_flags == {}

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 
 import reflex as rx
 import reflex_enterprise as rxe
 import sqlalchemy
 import sqlalchemy.orm
-from sqlmodel import delete, select
+from sqlmodel import col, delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from . import s3
@@ -19,6 +19,15 @@ from .models import Author, Entry, EntryFlags, Topic, UserInfo
 
 # The ID the will be used by the upload component.
 UPLOAD_ID = "upload_image"
+
+
+def _rel[T](relationship: T) -> sqlalchemy.orm.InstrumentedAttribute[T]:
+    """Treat a class-level SQLModel relationship as its SQLAlchemy attribute.
+
+    SQLModel does not type relationship attributes as InstrumentedAttribute on
+    the class, which loader options like selectinload() require.
+    """
+    return cast("sqlalchemy.orm.InstrumentedAttribute[T]", relationship)
 
 
 class LoadingState(rx.State):
@@ -43,7 +52,7 @@ class UserState(rxe.auth.AuthUserState):
             user = session.exec(
                 select(UserInfo)
                 .where(UserInfo.ext_id == self.sub)
-                .options(sqlalchemy.orm.selectinload(UserInfo.author))
+                .options(sqlalchemy.orm.selectinload(_rel(UserInfo.author)))
             ).first()
             if not user:
                 user = UserInfo(
@@ -134,13 +143,13 @@ class TopicState(rx.State):
         try:
             if user_state.is_admin:
                 load_options = [
-                    sqlalchemy.orm.selectinload(Entry.author).options(
-                        sqlalchemy.orm.selectinload(Author.user_info)
+                    sqlalchemy.orm.selectinload(_rel(Entry.author)).options(
+                        sqlalchemy.orm.selectinload(_rel(Author.user_info))
                     ),
                 ]
             else:
                 load_options = [
-                    sqlalchemy.orm.selectinload(Entry.author),
+                    sqlalchemy.orm.selectinload(_rel(Entry.author)),
                 ]
             async with rx.asession() as asession:
                 self.topic = await self._load_topic(asession)
@@ -152,7 +161,7 @@ class TopicState(rx.State):
                             Entry.topic_id == (self.topic.id if self.topic else None),
                         )
                         .options(*load_options)
-                        .order_by(Entry.ts.desc())
+                        .order_by(col(Entry.ts).desc())
                     )
                 ).all()
                 self.entry_like_counts = await self._load_entry_like_counts(asession)
@@ -202,7 +211,9 @@ class TopicState(rx.State):
 class UserFlagState(rx.State):
     """Per-user flag data and admin-only flag counts."""
 
-    user_entry_flags: rx.Field[dict[int, dict[str, bool]]]
+    user_entry_flags: rx.Field[dict[int, dict[str, bool]]] = rx.field(
+        default_factory=dict
+    )
     entry_flag_counts: rx.Field[dict[int, dict[str, int]]] = rxe.field(
         auth=require_admin
     )
@@ -258,8 +269,8 @@ class UserFlagState(rx.State):
 class PostFormState(rx.State):
     """The base state for the App."""
 
-    form_error: rx.Field[str]
-    image_relative_path: rx.Field[str]
+    form_error: rx.Field[str] = rx.field(default="")
+    image_relative_path: rx.Field[str] = rx.field(default="")
 
     @rx.event
     async def handle_submit(self, form_data: dict[str, Any]):
@@ -368,9 +379,9 @@ class EntryActionState(rx.State):
         async with rx.asession() as asession:
             await asession.exec(
                 delete(EntryFlags).where(
-                    EntryFlags.user_id == user_state.user_info.id,
-                    EntryFlags.entry_id == entry_id,
-                    EntryFlags.type == "like",
+                    col(EntryFlags.user_id) == user_state.user_info.id,
+                    col(EntryFlags.entry_id) == entry_id,
+                    col(EntryFlags.type) == "like",
                 )
             )
             await asession.commit()
@@ -384,12 +395,12 @@ class EntryActionState(rx.State):
         loading_state.flagging = entry_id
         yield
         query = delete(EntryFlags).where(
-            EntryFlags.entry_id == entry_id,
-            EntryFlags.type == "flag",
+            col(EntryFlags.entry_id) == entry_id,
+            col(EntryFlags.type) == "flag",
         )
         if not user_state.is_admin:
             # Only allow users to unflag their own flags.
-            query = query.where(EntryFlags.user_id == user_state.user_info.id)
+            query = query.where(col(EntryFlags.user_id) == user_state.user_info.id)
         async with rx.asession() as asession:
             await asession.exec(query)
             await asession.commit()

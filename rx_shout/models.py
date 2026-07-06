@@ -14,12 +14,15 @@ class Entry(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), server_default=func.now()),
     )
     author_id: int = Field(nullable=False, foreign_key="author.user_id", index=True)
-    topic_id: int = Field(nullable=True, foreign_key="topic.id", index=True)
+    topic_id: int = Field(
+        default=None, nullable=True, foreign_key="topic.id", index=True
+    )
     text: str = Field(nullable=False)
-    image: str = Field(nullable=True)
+    image: str = Field(default=None, nullable=True)
     hidden: bool = Field(default=False)
 
-    author: Optional["Author"] = Relationship(
+    # author_id is a non-nullable FK, so the relationship is always present.
+    author: "Author" = Relationship(
         back_populates="entries",
     )
     entry_flags: List["EntryFlags"] = Relationship(
@@ -65,7 +68,8 @@ class Author(SQLModel, table=True):
     name: str = Field(nullable=False)
     picture: str = Field(nullable=False)
 
-    user_info: Optional[UserInfo] = Relationship(back_populates="author")
+    # user_id is a non-nullable FK, so the relationship is always present.
+    user_info: UserInfo = Relationship(back_populates="author")
     entries: List[Entry] = Relationship(
         back_populates="author",
     )

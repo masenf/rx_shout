@@ -33,6 +33,7 @@ def upload_image(page: Page, png_file: Path):
 def preview_filename(page: Page) -> str:
     """Return the server-side filename parsed from the preview img src."""
     src = page.locator("img[src*='_upload']").first.get_attribute("src")
+    assert src is not None
     return src.rstrip("/").rsplit("/", 1)[-1]
 
 
