@@ -28,7 +28,7 @@ jobs:
         - name: Update .env
           run: |
             echo "DOMAIN=${{ secrets.DOMAIN }}" > .env
-            echo "REFLEX_DEPLOY_URL=https://${{ secrets.DOMAIN }}" > .env
+            echo "REFLEX_DEPLOY_URL=https://${{ secrets.DOMAIN }}" >> .env
             echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
         # rsync local checkout to deploy directory
         - name: Rsync
