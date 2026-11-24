@@ -28,6 +28,7 @@ jobs:
         - name: Update .env
           run: |
             echo "DOMAIN=${{ secrets.DOMAIN }}" > .env
+            echo "REFLEX_DEPLOY_URL=https://${{ secrets.DOMAIN }}" > .env
             echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
         # rsync local checkout to deploy directory
         - name: Rsync
@@ -63,4 +64,4 @@ jobs:
           with:
             auth_token: ${{ secrets.REFLEX_AUTH_TOKEN }}
             project_id: ${{ secrets.REFLEX_PROJECT_ID }}
-            extra_args: --vmtype c1m2
+            extra_args: --vmtype c1m2 --env "REFLEX_DEPLOY_URL=https://rx-shout.0x26.net"

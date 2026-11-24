@@ -4,6 +4,7 @@ import importlib.metadata
 import sys
 import reflex as rx
 import reflex_google_auth
+from reflex.model import migrate
 
 from .components.entry import entry_view
 from .components.google_auth import (
@@ -77,4 +78,4 @@ app.add_page(
     description="A shoutbox-like app for posting text and images.",
     on_load=State.load_entries,
 )
-rx.Model.migrate()
+migrate()

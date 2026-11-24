@@ -43,7 +43,7 @@ class UploadState(State):
     @rx.event
     async def handle_upload(self, files: list[rx.UploadFile] = []):
         """Write the file bytes to disk and update the filename in base state."""
-        if not self._is_valid_user():
+        if not await self._is_valid_user():
             return
         if not files:
             yield rx.toast("File size too large or invalid format")
