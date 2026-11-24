@@ -1,83 +1,134 @@
 """Database models used by the app are defined in this module."""
 
-from typing import List, Optional
+from typing import Any
 import datetime
 
-from sqlmodel import Field, DateTime, Column, func, Relationship, SQLModel
+import sqlalchemy
+from sqlalchemy import DateTime, ForeignKey, func
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    MappedAsDataclass,
+    mapped_column,
+    relationship,
+)
 
 import reflex as rx
 
 
-class Entry(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    ts: datetime.datetime = Field(
-        sa_column=Column(DateTime(timezone=True), server_default=func.now()),
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+rx.ModelRegistry.register(Base)
+
+
+class Entry(Base):
+    __tablename__ = "entry"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    ts: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        init=False,
+        server_default=func.now(),
     )
-    author_id: int = Field(nullable=False, foreign_key="author.user_id", index=True)
-    topic_id: int = Field(nullable=True, foreign_key="topic.id", index=True)
-    text: str = Field(nullable=False)
-    image: str = Field(nullable=True)
-    hidden: bool = Field(default=False)
-
-    author: Optional["Author"] = Relationship(
-        back_populates="entries",
+    author_id: Mapped[int] = mapped_column(ForeignKey("author.user_id"), index=True)
+    text: Mapped[str]
+    topic_id: Mapped[int | None] = mapped_column(
+        ForeignKey("topic.id"), index=True, default=None
     )
-    entry_flags: List["EntryFlags"] = Relationship(
-        back_populates="entry",
+    image: Mapped[str | None] = mapped_column(default=None)
+    hidden: Mapped[bool] = mapped_column(default=False)
+
+    author: Mapped["Author"] = relationship(
+        back_populates="entries", init=False, repr=False
     )
-    topic: Optional["Topic"] = Relationship(
-        back_populates="entries",
+    entry_flags: Mapped[list["EntryFlags"]] = relationship(
+        back_populates="entry", default_factory=list, repr=False
     )
-
-    def dict(self, *args, **kwargs) -> dict:
-        d = super().dict(*args, **kwargs)
-        d["ts"] = self.ts.replace(microsecond=0).isoformat()
-        return d
-
-
-class UserInfo(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    ext_id: str = Field(nullable=False, unique=True, index=True)
-    email: str = Field(nullable=False)
-    enabled: bool = Field(default=True)
-
-    author: Optional["Author"] = Relationship(back_populates="user_info")
-    entry_flags: List["EntryFlags"] = Relationship(
-        back_populates="user_info",
+    topic: Mapped["Topic | None"] = relationship(
+        back_populates="entries", init=False, repr=False
     )
 
 
-class Author(SQLModel, table=True):
-    user_id: int = Field(
-        nullable=False,
-        foreign_key="userinfo.id",
+class UserInfo(Base):
+    __tablename__ = "userinfo"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    ext_id: Mapped[str] = mapped_column(unique=True, index=True)
+    email: Mapped[str]
+    enabled: Mapped[bool] = mapped_column(default=True)
+
+    author: Mapped["Author | None"] = relationship(
+        back_populates="user_info", init=False, repr=False
+    )
+    entry_flags: Mapped[list["EntryFlags"]] = relationship(
+        back_populates="user_info", default_factory=list, repr=False
+    )
+
+
+class Author(Base):
+    __tablename__ = "author"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("userinfo.id"),
         index=True,
         unique=True,
         primary_key=True,
     )
-    name: str = Field(nullable=False)
-    picture: str = Field(nullable=False)
+    name: Mapped[str]
+    picture: Mapped[str]
 
-    user_info: Optional[UserInfo] = Relationship(back_populates="author")
-    entries: List[Entry] = Relationship(
-        back_populates="author",
+    user_info: Mapped[UserInfo] = relationship(
+        back_populates="author", init=False, repr=False
+    )
+    entries: Mapped[list[Entry]] = relationship(
+        back_populates="author", default_factory=list, repr=False
     )
 
 
-class EntryFlags(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    user_id: int = Field(nullable=False, foreign_key="userinfo.id", index=True)
-    entry_id: int = Field(nullable=False, foreign_key="entry.id", index=True)
-    type: str = Field(nullable=False)
+class EntryFlags(Base):
+    __tablename__ = "entryflags"
 
-    user_info: UserInfo = Relationship(back_populates="entry_flags")
-    entry: Entry = Relationship(back_populates="entry_flags")
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("userinfo.id"), index=True)
+    entry_id: Mapped[int] = mapped_column(ForeignKey("entry.id"), index=True)
+    type: Mapped[str]
+
+    user_info: Mapped[UserInfo] = relationship(
+        back_populates="entry_flags", init=False, repr=False
+    )
+    entry: Mapped[Entry] = relationship(
+        back_populates="entry_flags", init=False, repr=False
+    )
 
 
-class Topic(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    name: str = Field(nullable=False, unique=True, index=True)
-    description: str = ""
-    locked: bool = Field(default=False)
+class Topic(Base):
+    __tablename__ = "topic"
 
-    entries: List[Entry] = Relationship(back_populates="topic")
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str] = mapped_column(unique=True, index=True)
+    description: Mapped[str] = mapped_column(default="")
+    locked: Mapped[bool] = mapped_column(default=False)
+
+    entries: Mapped[list[Entry]] = relationship(
+        back_populates="topic", default_factory=list, repr=False
+    )
+
+
+@rx.serializer
+def serialize_model(model: Base) -> dict[str, Any]:
+    """Send a model's loaded columns and relationships to the frontend."""
+    state = sqlalchemy.inspect(model)
+    return {
+        attr.key: attr.value for attr in state.attrs if attr.key not in state.unloaded
+    }
+
+
+@rx.serializer
+def serialize_entry(entry: Entry) -> dict[str, Any]:
+    """Send an entry with its timestamp truncated to whole seconds."""
+    data = serialize_model(entry)
+    if (ts := data.get("ts")) is not None:
+        data["ts"] = ts.replace(microsecond=0).isoformat()
+    return data

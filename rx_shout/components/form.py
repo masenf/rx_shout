@@ -26,8 +26,8 @@ class EditTopicViewState(UserInfoState):
     editor_open: bool = False
 
     @rx.event
-    def set_editor_open(self, value: bool):
-        if self.is_admin:
+    async def set_editor_open(self, value: bool):
+        if await self.is_admin:
             self.editor_open = value
 
     @rx.event
